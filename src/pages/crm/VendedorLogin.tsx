@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { ShieldCheck, Loader2 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 
-export default function Login() {
+export default function VendedorLogin() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -28,19 +28,29 @@ export default function Login() {
         variant: 'destructive',
       })
     } else {
-      navigate('/admin')
+      navigate('/crm')
     }
+  }
+
+  const handleForgotPassword = () => {
+    toast({
+      title: 'Recuperação de Senha',
+      description: 'Entre em contato com o administrador do sistema para redefinir sua senha.',
+    })
   }
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
       <div className="mb-8 flex flex-col items-center">
         <ShieldCheck className="h-12 w-12 text-primary mb-2" />
-        <h1 className="text-2xl font-bold text-white tracking-tight">Tiexpress CRM</h1>
+        <h1 className="text-2xl font-bold text-white tracking-tight">
+          Tiexpress - Expresse seu negócio!
+        </h1>
+        <p className="text-slate-400 mt-2">Área Restrita do Vendedor</p>
       </div>
       <Card className="w-full max-w-md bg-slate-900 border-slate-800 text-white shadow-2xl">
         <CardHeader>
-          <CardTitle className="text-xl">Acesso Restrito</CardTitle>
+          <CardTitle className="text-xl text-center">Autenticação Segura</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -58,9 +68,18 @@ export default function Login() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-slate-300">
-                Senha
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-slate-300">
+                  Senha
+                </Label>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Esqueceu a senha?
+                </button>
+              </div>
               <Input
                 id="password"
                 type="password"
@@ -71,7 +90,7 @@ export default function Login() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Entrar'}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Entrar no CRM'}
             </Button>
           </form>
         </CardContent>

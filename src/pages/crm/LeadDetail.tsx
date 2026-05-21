@@ -8,6 +8,8 @@ import {
   getDocumentos,
   uploadDocumento,
   updateLead,
+  getNotas,
+  addNota,
 } from '@/services/api'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -46,7 +48,10 @@ export default function LeadDetail() {
   const [lead, setLead] = useState<any>(null)
   const [checklist, setChecklist] = useState<any[]>([])
   const [documentos, setDocumentos] = useState<any[]>([])
+  const [notas, setNotas] = useState<any[]>([])
+  const [novaNota, setNovaNota] = useState('')
   const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
 
   // New task state
   const [newTaskTitle, setNewTaskTitle] = useState('')
@@ -59,14 +64,16 @@ export default function LeadDetail() {
   const fetchData = async () => {
     if (!id) return
     try {
-      const [leadData, tasksData, docsData] = await Promise.all([
+      const [leadData, tasksData, docsData, notasData] = await Promise.all([
         getLeadById(id),
         getChecklistTarefas(id),
         getDocumentos(id),
+        getNotas(id),
       ])
       setLead(leadData)
       setChecklist(tasksData)
       setDocumentos(docsData)
+      setNotas(notasData)
     } catch (err) {
       toast({ title: 'Erro ao carregar dados', variant: 'destructive' })
     } finally {
@@ -162,6 +169,18 @@ export default function LeadDetail() {
     }
   }
 
+  const handleAddNota = async () => {
+    if (!novaNota.trim() || !id || !user) return
+    try {
+      const nota = await addNota({ lead_id: id, vendedor_id: user.id, conteudo: novaNota })
+      setNotas([{ ...nota, expand: { vendedor_id: user } }, ...notas])
+      setNovaNota('')
+      toast({ title: 'Nota adicionada' })
+    } catch (err) {
+      toast({ title: 'Erro ao adicionar nota', variant: 'destructive' })
+    }
+  }
+
   if (loading)
     return (
       <div className="flex h-64 items-center justify-center">
@@ -221,8 +240,8 @@ export default function LeadDetail() {
     <div className="space-y-6 animate-fade-in pb-12">
       <div className="flex items-center gap-4">
         <Button variant="ghost" asChild className="p-0 hover:bg-transparent">
-          <Link to="/admin">
-            <ArrowLeft className="h-5 w-5 mr-2" /> Voltar
+          <Link to="/crm/leads">
+            <ArrowLeft className="h-5 w-5 mr-2" /> Voltar aos Leads
           </Link>
         </Button>
         <h1 className="text-2xl font-bold">Detalhes do Lead</h1>
@@ -254,9 +273,9 @@ export default function LeadDetail() {
           <CardContent className="space-y-6">
             <div className="flex gap-4 border-b border-slate-800 pb-6">
               <Button asChild className="flex-1 bg-primary hover:bg-primary/90">
-                <a href={`mailto:${lead.email}?subject=Proposta Tiexpress - Adequação CNJ 213`}>
-                  <Mail className="h-4 w-4 mr-2" /> Enviar Proposta
-                </a>
+                <Link to="/crm/propostas">
+                  <FileText className="h-4 w-4 mr-2" /> Criar Proposta
+                </Link>
               </Button>
               <Button
                 asChild
@@ -336,6 +355,12 @@ export default function LeadDetail() {
             Resumo & EOL
           </TabsTrigger>
           <TabsTrigger
+            value="timeline"
+            className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400"
+          >
+            Timeline & Notas
+          </TabsTrigger>
+          <TabsTrigger
             value="checklist"
             className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400"
           >
@@ -359,13 +384,64 @@ export default function LeadDetail() {
             </CardHeader>
             <CardContent>
               <EolMatrix />
-              <div className="mt-6 bg-slate-950 p-4 rounded-lg border border-slate-800">
-                <h4 className="font-semibold mb-2 flex items-center gap-2">
-                  <FileSignature className="h-4 w-4 text-primary" /> Notas do Consultor
-                </h4>
-                <p className="text-slate-400 text-sm whitespace-pre-wrap">
-                  {lead.notas || 'Nenhuma nota registrada. Edite no Dashboard.'}
-                </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="timeline" className="mt-4">
+          <Card className="bg-slate-900 border-slate-800 text-white">
+            <CardHeader>
+              <CardTitle>Histórico de Interações</CardTitle>
+              <CardDescription className="text-slate-400">
+                Notas, contatos e propostas enviadas para este lead.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4 mb-6">
+                <div className="flex gap-2">
+                  <Input
+                    value={novaNota}
+                    onChange={(e) => setNovaNota(e.target.value)}
+                    placeholder="Adicionar uma nova nota..."
+                    className="bg-slate-950 border-slate-700 text-white flex-1"
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddNota()}
+                  />
+                  <Button onClick={handleAddNota} variant="secondary">
+                    Adicionar
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-800 before:to-transparent">
+                {notas.length === 0 ? (
+                  <p className="text-sm text-slate-500 text-center py-4 relative z-10">
+                    Nenhum histórico registrado.
+                  </p>
+                ) : (
+                  notas.map((nota) => (
+                    <div
+                      key={nota.id}
+                      className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active"
+                    >
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full border border-slate-800 bg-slate-900 group-[.is-active]:bg-primary group-[.is-active]:border-primary shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 relative z-10 text-white">
+                        <FileSignature className="h-4 w-4" />
+                      </div>
+                      <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-lg bg-slate-950 border border-slate-800 shadow relative z-10">
+                        <div className="flex items-center justify-between space-x-2 mb-1">
+                          <div className="font-bold text-slate-200 text-sm">
+                            {nota.expand?.vendedor_id?.name || 'Vendedor'}
+                          </div>
+                          <time className="text-xs text-slate-500">
+                            {format(new Date(nota.created), 'dd/MM HH:mm')}
+                          </time>
+                        </div>
+                        <div className="text-slate-400 text-sm whitespace-pre-wrap">
+                          {nota.conteudo}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>

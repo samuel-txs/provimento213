@@ -16,8 +16,48 @@ export const updateLead = async (id: string, data: any) => {
   return pb.collection('leads').update(id, data)
 }
 
-export const getLeads = async () => {
-  return pb.collection('leads').getFullList({ sort: '-created' })
+export const getLeads = async (vendedorId?: string) => {
+  const filter = vendedorId ? `vendedor_id = "${vendedorId}"` : undefined
+  return pb.collection('leads').getFullList({ sort: '-created', filter })
+}
+
+export const getNotas = async (leadId: string) => {
+  return pb
+    .collection('notas_lead')
+    .getFullList({ filter: `lead_id = "${leadId}"`, sort: '-created', expand: 'vendedor_id' })
+}
+
+export const addNota = async (data: { lead_id: string; vendedor_id: string; conteudo: string }) => {
+  return pb.collection('notas_lead').create(data)
+}
+
+export const getMinhasPropostas = async (vendedorId?: string) => {
+  const filter = vendedorId ? `vendedor_id = "${vendedorId}"` : undefined
+  return pb.collection('propostas').getFullList({ filter, sort: '-created', expand: 'lead_id' })
+}
+
+export const createProposta = async (data: any) => {
+  return pb.collection('propostas').create(data)
+}
+
+export const updateProposta = async (id: string, data: any) => {
+  return pb.collection('propostas').update(id, data)
+}
+
+export const sendPropostaEmail = async (email: string, lead_id: string) => {
+  return pb.send('/backend/v1/propostas/send', {
+    method: 'POST',
+    body: JSON.stringify({ email, lead_id }),
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+export const getServicos = async () => {
+  return pb.collection('servicos').getFullList()
+}
+
+export const getPrecosServicos = async () => {
+  return pb.collection('precos_servicos').getFullList({ expand: 'servico_id' })
 }
 
 export const getLeadById = async (id: string) => {

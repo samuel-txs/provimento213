@@ -17,8 +17,11 @@ import ProposalSummary from './pages/ProposalSummary'
 import CrmLayout from './pages/crm/CrmLayout'
 import AdminServices from './pages/crm/AdminServices'
 import Dashboard from './pages/crm/Dashboard'
-import Login from './pages/crm/Login'
+import VendedorLogin from './pages/crm/VendedorLogin'
 import LeadDetail from './pages/crm/LeadDetail'
+import MeusLeads from './pages/crm/MeusLeads'
+import Propostas from './pages/crm/Propostas'
+import AccessDenied from './pages/crm/AccessDenied'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -39,11 +42,14 @@ const App = () => (
                 <Route path="/proposta" element={<ProposalSummary />} />
               </Route>
 
-              {/* Admin Routes */}
-              <Route path="/admin/login" element={<Login />} />
-              <Route path="/admin" element={<CrmLayout />}>
+              {/* CRM Routes */}
+              <Route path="/vendedor/login" element={<VendedorLogin />} />
+              <Route path="/crm/acesso-negado" element={<AccessDenied />} />
+              <Route path="/crm" element={<CrmLayout />}>
                 <Route index element={<Dashboard />} />
+                <Route path="leads" element={<MeusLeads />} />
                 <Route path="leads/:id" element={<LeadDetail />} />
+                <Route path="propostas" element={<Propostas />} />
                 <Route path="servicos" element={<AdminServices />} />
               </Route>
 
