@@ -4,13 +4,18 @@ import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider } from '@/hooks/use-auth'
 import { ChecklistProvider } from '@/hooks/use-checklist'
+import { CartProvider } from '@/hooks/use-cart'
 import { Layout } from './components/Layout'
 import Index from './pages/Index'
 import NotFound from './pages/NotFound'
 import LeadCapture from './pages/LeadCapture'
 import Checklist from './pages/Checklist'
 import Result from './pages/Result'
+import ServiceCatalog from './pages/ServiceCatalog'
+import Cart from './pages/Cart'
+import ProposalSummary from './pages/ProposalSummary'
 import CrmLayout from './pages/crm/CrmLayout'
+import AdminServices from './pages/crm/AdminServices'
 import Dashboard from './pages/crm/Dashboard'
 import Login from './pages/crm/Login'
 import LeadDetail from './pages/crm/LeadDetail'
@@ -20,25 +25,31 @@ const App = () => (
     <AuthProvider>
       <TooltipProvider>
         <ChecklistProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route element={<Layout />}>
-              <Route path="/" element={<Index />} />
-              <Route path="/identificacao" element={<LeadCapture />} />
-              <Route path="/checklist" element={<Checklist />} />
-              <Route path="/resultado" element={<Result />} />
-            </Route>
+          <CartProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route element={<Layout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/identificacao" element={<LeadCapture />} />
+                <Route path="/checklist" element={<Checklist />} />
+                <Route path="/resultado" element={<Result />} />
+                <Route path="/servicos" element={<ServiceCatalog />} />
+                <Route path="/carrinho" element={<Cart />} />
+                <Route path="/proposta" element={<ProposalSummary />} />
+              </Route>
 
-            {/* Admin Routes */}
-            <Route path="/admin/login" element={<Login />} />
-            <Route path="/admin" element={<CrmLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="leads/:id" element={<LeadDetail />} />
-            </Route>
+              {/* Admin Routes */}
+              <Route path="/admin/login" element={<Login />} />
+              <Route path="/admin" element={<CrmLayout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="leads/:id" element={<LeadDetail />} />
+                <Route path="servicos" element={<AdminServices />} />
+              </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </CartProvider>
         </ChecklistProvider>
       </TooltipProvider>
     </AuthProvider>

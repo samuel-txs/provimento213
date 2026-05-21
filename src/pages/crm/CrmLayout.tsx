@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
-import { ShieldCheck, LogOut, LayoutDashboard, Users, FileText } from 'lucide-react'
+import { ShieldCheck, LogOut, LayoutDashboard, Users, FileText, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export default function CrmLayout() {
@@ -51,6 +51,13 @@ export default function CrmLayout() {
             <FileText className="h-4 w-4" />
             Relatórios
           </a>
+          <Link
+            to="/admin/servicos"
+            className="flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors"
+          >
+            <Settings className="h-4 w-4" />
+            Serviços e Preços
+          </Link>
         </nav>
         <div className="p-4 border-t border-slate-800">
           <div className="flex items-center gap-3 mb-4 px-2">

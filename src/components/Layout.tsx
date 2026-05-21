@@ -15,6 +15,7 @@ export function Layout() {
 
   const navLinks = [
     { name: 'O Provimento', path: '/#provimento' },
+    { name: 'Serviços', path: '/servicos' },
     { name: 'Benefícios', path: '/#beneficios' },
     { name: 'Contato', path: '#contato' },
   ]
@@ -46,6 +47,9 @@ export function Layout() {
                 </a>
               ))}
             </div>
+            <Button asChild variant="outline" className="rounded-full px-6 font-semibold">
+              <Link to="/carrinho">Carrinho</Link>
+            </Button>
             <Button asChild className="rounded-full px-6 font-semibold shadow-elevation">
               <Link to="/checklist">Fazer Diagnóstico</Link>
             </Button>
@@ -78,6 +82,9 @@ export function Layout() {
                 {link.name}
               </a>
             ))}
+            <Button asChild variant="outline" className="w-full mt-2">
+              <Link to="/carrinho">Ver Carrinho</Link>
+            </Button>
             <Button asChild className="w-full mt-2">
               <Link to="/checklist">Fazer Diagnóstico Gratuito</Link>
             </Button>
