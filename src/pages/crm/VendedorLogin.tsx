@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ShieldCheck, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import logoImg from '@/assets/logo-fundopreto-ti-express-tagline-5e290.png'
 
 export default function VendedorLogin() {
   const [email, setEmail] = useState('')
@@ -42,11 +43,9 @@ export default function VendedorLogin() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
       <div className="mb-8 flex flex-col items-center">
-        <ShieldCheck className="h-12 w-12 text-primary mb-2" />
-        <h1 className="text-2xl font-bold text-white tracking-tight">
-          Tiexpress - Expresse seu negócio!
-        </h1>
-        <p className="text-slate-400 mt-2">Área Restrita do Vendedor</p>
+        <img src={logoImg} alt="Provimento 213 TXS" className="h-16 object-contain mb-6" />
+        <h1 className="text-2xl font-bold text-white tracking-tight mt-2">Acesso Restrito</h1>
+        <p className="text-slate-400 mt-2">Área do Vendedor / CRM</p>
       </div>
       <Card className="w-full max-w-md bg-slate-900 border-slate-800 text-white shadow-2xl">
         <CardHeader>

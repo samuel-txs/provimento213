@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
-import { ShieldCheck, LogOut, LayoutDashboard, Users, FileText, Settings } from 'lucide-react'
+import { LogOut, LayoutDashboard, Users, FileText, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import logoImg from '@/assets/logo-fundopreto-ti-express-tagline-5e290.png'
 
 export default function CrmLayout() {
   const { isAuthenticated, loading, signOut, user } = useAuth()
@@ -62,9 +63,8 @@ export default function CrmLayout() {
     <div className="min-h-screen bg-slate-950 text-slate-300 flex">
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-slate-800">
-          <ShieldCheck className="h-6 w-6 text-primary mr-2" />
-          <span className="font-bold text-white tracking-tight">Tiexpress CRM</span>
+        <div className="h-16 flex items-center px-6 border-b border-slate-800 bg-black">
+          <img src={logoImg} alt="Provimento 213 TXS" className="h-8 object-contain" />
         </div>
         <nav className="flex-1 py-6 px-4 space-y-2">
           <Link

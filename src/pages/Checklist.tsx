@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/card'
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import logoImg from '@/assets/logo-fundopreto-ti-express-tagline-5e290.png'
 
 export default function Checklist() {
   const navigate = useNavigate()
@@ -67,11 +68,8 @@ export default function Checklist() {
     <div className="flex-1 bg-muted/20 py-8 px-4 animate-fade-in">
       <div className="container max-w-3xl mx-auto">
         <div className="text-center mb-8">
-          <div className="inline-flex flex-col items-center justify-center">
-            <span className="text-2xl font-extrabold text-primary tracking-tighter uppercase">
-              Tiexpress
-            </span>
-            <span className="text-sm text-slate-500 font-medium">Expresse seu negócio!</span>
+          <div className="inline-flex flex-col items-center justify-center bg-black p-4 rounded-xl shadow-lg">
+            <img src={logoImg} alt="Provimento 213 TXS" className="h-8 md:h-10 object-contain" />
           </div>
         </div>
 

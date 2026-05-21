@@ -14,8 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { FileDown, Mail, ShieldCheck, CheckCircle } from 'lucide-react'
+import { FileDown, Mail, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import logoImg from '@/assets/logo-fundopreto-ti-express-tagline-5e290.png'
+import iconImg from '@/assets/icone-monobranca-ti-express-f6598.png'
 
 export default function ProposalSummary() {
   const { items, sessaoId } = useCart()
@@ -107,11 +109,13 @@ export default function ProposalSummary() {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-3 mb-8 pb-6 border-b">
-          <ShieldCheck className="h-10 w-10 text-primary" />
+        <div className="flex items-center gap-4 mb-8 pb-6 border-b">
+          <div className="bg-black p-2.5 rounded-xl shrink-0">
+            <img src={iconImg} alt="TXS" className="h-8 w-8 object-contain" />
+          </div>
           <div>
             <h1 className="text-3xl font-display font-bold">Resumo da Proposta</h1>
-            <p className="text-slate-500">Documento base para prestação de serviços Tiexpress</p>
+            <p className="text-slate-500">Documento base para prestação de serviços</p>
           </div>
         </div>
 
@@ -179,8 +183,13 @@ export default function ProposalSummary() {
         <Card className="print:shadow-none print:border-none">
           <CardContent className="p-8">
             <div className="text-center mb-8">
+              <div
+                className="bg-black inline-block p-4 rounded-xl mb-6"
+                style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}
+              >
+                <img src={logoImg} alt="Provimento 213 TXS" className="h-10 object-contain" />
+              </div>
               <h2 className="text-2xl font-bold">Proposta Comercial - Adequação CNJ 213</h2>
-              <p className="text-slate-500">Tiexpress - Expresse seu negócio!</p>
             </div>
 
             <table className="w-full mb-8 text-left border-collapse">

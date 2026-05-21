@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -15,9 +15,9 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Deep Navy Blue #1E3A8A */
-    --primary: 224 64% 33%;
-    --primary-foreground: 210 40% 98%;
+    /* Tiexpress Orange */
+    --primary: 15 90% 55%;
+    --primary-foreground: 0 0% 100%;
 
     /* Emerald Green #10B981 */
     --secondary: 160 84% 39%;
@@ -35,7 +35,7 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 224 64% 33%;
+    --ring: 15 90% 55%;
 
     --radius: 0.75rem;
 
@@ -56,8 +56,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 224 64% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 15 90% 55%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 160 84% 39%;
     --secondary-foreground: 210 40% 98%;
@@ -73,7 +73,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224 64% 50%;
+    --ring: 15 90% 55%;
 
     --chart-1: 224 64% 50%;
     --chart-2: 160 84% 39%;
