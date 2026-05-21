@@ -83,24 +83,35 @@ export default function Dashboard() {
 
   const { funnelData, scoreData, metrics } = useMemo(() => {
     const counts = { novo: 0, contatado: 0, negociando: 0, convertido: 0 }
-    const scoreBuckets = { alto: { total: 0, conv: 0 }, medio: { total: 0, conv: 0 }, baixo: { total: 0, conv: 0 } }
+    const scoreBuckets = {
+      alto: { total: 0, conv: 0 },
+      medio: { total: 0, conv: 0 },
+      baixo: { total: 0, conv: 0 },
+    }
     let totalReceita = 0
     let totalConvertido = 0
-    
+
     leads.forEach((l) => {
       if (l.status in counts) counts[l.status as keyof typeof counts]++
-      
+
       const s = l.score || 0
       const isConv = l.status === 'convertido'
       if (isConv) totalConvertido++
-      
-      totalReceita += (l.receita_potencial || 0)
 
-      if (s >= 71) { scoreBuckets.alto.total++; if(isConv) scoreBuckets.alto.conv++; }
-      else if (s >= 41) { scoreBuckets.medio.total++; if(isConv) scoreBuckets.medio.conv++; }
-      else { scoreBuckets.baixo.total++; if(isConv) scoreBuckets.baixo.conv++; }
+      totalReceita += l.receita_potencial || 0
+
+      if (s >= 71) {
+        scoreBuckets.alto.total++
+        if (isConv) scoreBuckets.alto.conv++
+      } else if (s >= 41) {
+        scoreBuckets.medio.total++
+        if (isConv) scoreBuckets.medio.conv++
+      } else {
+        scoreBuckets.baixo.total++
+        if (isConv) scoreBuckets.baixo.conv++
+      }
     })
-    
+
     const funnel = [
       { name: 'Novos', count: counts.novo, color: '#3b82f6' },
       { name: 'Contatados', count: counts.contatado, color: '#f59e0b' },
@@ -109,19 +120,37 @@ export default function Dashboard() {
     ]
 
     const scores = [
-      { name: 'Baixo (<40)', rate: scoreBuckets.baixo.total ? Math.round((scoreBuckets.baixo.conv / scoreBuckets.baixo.total)*100) : 0, fill: '#ef4444' },
-      { name: 'Médio (41-70)', rate: scoreBuckets.medio.total ? Math.round((scoreBuckets.medio.conv / scoreBuckets.medio.total)*100) : 0, fill: '#f59e0b' },
-      { name: 'Alto (>70)', rate: scoreBuckets.alto.total ? Math.round((scoreBuckets.alto.conv / scoreBuckets.alto.total)*100) : 0, fill: '#10b981' },
+      {
+        name: 'Baixo (<40)',
+        rate: scoreBuckets.baixo.total
+          ? Math.round((scoreBuckets.baixo.conv / scoreBuckets.baixo.total) * 100)
+          : 0,
+        fill: '#ef4444',
+      },
+      {
+        name: 'Médio (41-70)',
+        rate: scoreBuckets.medio.total
+          ? Math.round((scoreBuckets.medio.conv / scoreBuckets.medio.total) * 100)
+          : 0,
+        fill: '#f59e0b',
+      },
+      {
+        name: 'Alto (>70)',
+        rate: scoreBuckets.alto.total
+          ? Math.round((scoreBuckets.alto.conv / scoreBuckets.alto.total) * 100)
+          : 0,
+        fill: '#10b981',
+      },
     ]
 
-    return { 
-      funnelData: funnel, 
+    return {
+      funnelData: funnel,
       scoreData: scores,
       metrics: {
         receita: totalReceita,
         taxaGeral: leads.length ? Math.round((totalConvertido / leads.length) * 100) : 0,
-        ativos: counts.novo + counts.contatado + counts.negociando
-      }
+        ativos: counts.novo + counts.contatado + counts.negociando,
+      },
     }
   }, [leads])
 
@@ -166,7 +195,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
-      
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-slate-900 border-slate-800 text-white">
@@ -211,40 +239,39 @@ export default function Dashboard() {
             <CardTitle className="text-lg">Volume do Funil</CardTitle>
           </CardHeader>
           <CardContent>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={funnelData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                <XAxis
-                  dataKey="name"
-                  stroke="#64748b"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="#64748b"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  allowDecimals={false}
-                />
-                <RechartsTooltip
-                  cursor={{ fill: '#1e293b' }}
-                  contentStyle={{
-                    backgroundColor: '#0f172a',
-                    borderColor: '#1e293b',
-                    color: '#fff',
-                  }}
-                />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                  {funnelData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={funnelData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <XAxis
+                    dataKey="name"
+                    stroke="#64748b"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#64748b"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <RechartsTooltip
+                    cursor={{ fill: '#1e293b' }}
+                    contentStyle={{
+                      backgroundColor: '#0f172a',
+                      borderColor: '#1e293b',
+                      color: '#fff',
+                    }}
+                  />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                    {funnelData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
@@ -256,10 +283,35 @@ export default function Dashboard() {
           <CardContent>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={scoreData} layout="vertical" margin={{ top: 20, right: 30, left: 40, bottom: 0 }}>
-                  <XAxis type="number" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} unit="%" />
-                  <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                  <RechartsTooltip cursor={{ fill: '#1e293b' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff' }} />
+                <BarChart
+                  data={scoreData}
+                  layout="vertical"
+                  margin={{ top: 20, right: 30, left: 40, bottom: 0 }}
+                >
+                  <XAxis
+                    type="number"
+                    stroke="#64748b"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    unit="%"
+                  />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    stroke="#64748b"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <RechartsTooltip
+                    cursor={{ fill: '#1e293b' }}
+                    contentStyle={{
+                      backgroundColor: '#0f172a',
+                      borderColor: '#1e293b',
+                      color: '#fff',
+                    }}
+                  />
                   <Bar dataKey="rate" radius={[0, 4, 4, 0]} maxBarSize={40}>
                     {scoreData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
