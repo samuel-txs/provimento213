@@ -2,11 +2,20 @@ import React, { createContext, useContext, useState, ReactNode } from 'react'
 import { AnswerValue } from '@/lib/questions'
 
 export interface LeadData {
-  nomeServentia: string
-  responsavel: string
+  nome: string
   email: string
-  whatsapp: string
-  uf: string
+  telefone: string
+  cartorio: string
+  cnpj: string
+}
+
+export type AnswerValue = 'completo' | 'parcial' | 'nao' | 'naosei'
+
+export interface Question {
+  id: string
+  categoria: string
+  texto_pergunta: string
+  ordem: number
 }
 
 interface ChecklistContextType {
@@ -16,6 +25,8 @@ interface ChecklistContextType {
   setAnswer: (questionId: string, answer: AnswerValue) => void
   reset: () => void
   score: number
+  questions: Question[]
+  loadingQuestions: boolean
 }
 
 const ChecklistContext = createContext<ChecklistContextType | undefined>(undefined)
@@ -23,6 +34,22 @@ const ChecklistContext = createContext<ChecklistContextType | undefined>(undefin
 export function ChecklistProvider({ children }: { children: ReactNode }) {
   const [leadData, setLeadData] = useState<LeadData | null>(null)
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({})
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [loadingQuestions, setLoadingQuestions] = useState(true)
+
+  React.useEffect(() => {
+    import('@/services/api').then(({ getPerguntas }) => {
+      getPerguntas()
+        .then((res) => {
+          setQuestions(res as any)
+          setLoadingQuestions(false)
+        })
+        .catch((err) => {
+          console.error(err)
+          setLoadingQuestions(false)
+        })
+    })
+  }, [])
 
   const setAnswer = (questionId: string, answer: AnswerValue) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }))
@@ -34,16 +61,19 @@ export function ChecklistProvider({ children }: { children: ReactNode }) {
   }
 
   const calculateScore = () => {
-    const total = Object.keys(answers).length
+    const total = questions.length
     if (total === 0) return 0
 
     let points = 0
     Object.values(answers).forEach((val) => {
-      if (val === 'sim') points += 1
-      else if (val === 'parcial') points += 0.5
+      if (val === 'completo') points += 25
+      else if (val === 'parcial') points += 15
+      else if (val === 'naosei') points += 5
+      else if (val === 'nao') points += 0
     })
 
-    return Math.round((points / total) * 100)
+    const maxPoints = total * 25
+    return Math.round((points / maxPoints) * 100)
   }
 
   return (
@@ -55,6 +85,8 @@ export function ChecklistProvider({ children }: { children: ReactNode }) {
         setAnswer,
         reset,
         score: calculateScore(),
+        questions,
+        loadingQuestions,
       }}
     >
       {children}

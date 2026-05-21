@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
@@ -13,36 +14,91 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ShieldCheck, ArrowRight } from 'lucide-react'
+import { ShieldCheck, ArrowRight, Loader2 } from 'lucide-react'
+import { createLead, createResposta, createScore } from '@/services/api'
+import { toast } from '@/hooks/use-toast'
 
 const formSchema = z.object({
-  nomeServentia: z.string().min(3, 'Mínimo de 3 caracteres'),
-  responsavel: z.string().min(3, 'Mínimo de 3 caracteres'),
+  nome: z.string().min(3, 'Mínimo de 3 caracteres'),
   email: z.string().email('E-mail inválido'),
-  whatsapp: z.string().min(10, 'Número inválido, inclua o DDD'),
-  uf: z.string().length(2, 'Digite a sigla do estado, ex: SP').toUpperCase(),
+  telefone: z.string().min(10, 'Número inválido'),
+  cartorio: z.string().min(3, 'Mínimo de 3 caracteres'),
+  cnpj: z.string().min(14, 'CNPJ inválido'),
+  lgpd: z.boolean().refine((val) => val === true, {
+    message: 'Você deve aceitar os termos para continuar.',
+  }),
 })
 
 export default function LeadCapture() {
   const navigate = useNavigate()
-  const { setLeadData, reset } = useChecklist()
+  const { setLeadData, answers, score, questions } = useChecklist()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      nomeServentia: '',
-      responsavel: '',
+      nome: '',
       email: '',
-      whatsapp: '',
-      uf: '',
+      telefone: '',
+      cartorio: '',
+      cnpj: '',
+      lgpd: false,
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    reset() // Clear any previous answers
-    setLeadData(values)
-    navigate('/checklist')
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      setIsSubmitting(true)
+
+      const leadPayload = {
+        nome: values.nome,
+        email: values.email,
+        telefone: values.telefone,
+        cartorio: values.cartorio,
+        cnpj: values.cnpj,
+        status: 'novo',
+        score: score,
+      }
+
+      const lead = await createLead(leadPayload)
+
+      // Save answers
+      const resPromises = Object.entries(answers).map(([qId, answer]) => {
+        const question = questions.find((q) => q.id === qId)
+        if (!question) return Promise.resolve()
+        return createResposta({
+          lead_id: lead.id,
+          pergunta_id: question.id,
+          resposta: answer,
+          categoria: question.categoria,
+        })
+      })
+      await Promise.all(resPromises)
+
+      // Save score
+      await createScore({
+        lead_id: lead.id,
+        score_total: score,
+      })
+
+      setLeadData(values)
+      toast({
+        title: 'Sucesso!',
+        description: 'Seus resultados foram gerados com sucesso.',
+      })
+      navigate('/resultado')
+    } catch (err) {
+      console.error(err)
+      toast({
+        title: 'Erro',
+        description: 'Ocorreu um erro ao salvar os dados.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -52,12 +108,9 @@ export default function LeadCapture() {
           <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-4">
             <ShieldCheck className="h-8 w-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Identificação da Serventia
-          </h1>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Falta Pouco!</h1>
           <p className="text-slate-500 mt-2">
-            Preencha os dados abaixo para iniciar o checklist e receber seu relatório de
-            conformidade.
+            Preencha seus dados profissionais para liberar o seu Relatório de Conformidade.
           </p>
         </div>
 
@@ -65,7 +118,7 @@ export default function LeadCapture() {
           <CardHeader className="pb-4">
             <CardTitle>Dados de Contato</CardTitle>
             <CardDescription>
-              As informações serão usadas apenas para gerar o relatório final.
+              Seu relatório será gerado imediatamente após o preenchimento.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -73,63 +126,24 @@ export default function LeadCapture() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 <FormField
                   control={form.control}
-                  name="nomeServentia"
+                  name="nome"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome da Serventia (Cartório)</FormLabel>
+                      <FormLabel>Nome Completo</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Ex: 1º Tabelionato de Notas de São Paulo"
-                          className="h-11"
-                          {...field}
-                        />
+                        <Input placeholder="Ex: João Silva" className="h-11" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                <div className="grid sm:grid-cols-2 gap-5">
-                  <FormField
-                    control={form.control}
-                    name="responsavel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Responsável (TI ou Titular)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: João Silva" className="h-11" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="uf"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Estado (UF)</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Ex: SP"
-                            className="h-11 uppercase"
-                            maxLength={2}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
                 <div className="grid sm:grid-cols-2 gap-5">
                   <FormField
                     control={form.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>E-mail Corporativo</FormLabel>
+                        <FormLabel>E-mail Profissional</FormLabel>
                         <FormControl>
                           <Input
                             type="email"
@@ -144,10 +158,10 @@ export default function LeadCapture() {
                   />
                   <FormField
                     control={form.control}
-                    name="whatsapp"
+                    name="telefone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>WhatsApp (com DDD)</FormLabel>
+                        <FormLabel>Telefone / WhatsApp</FormLabel>
                         <FormControl>
                           <Input
                             type="tel"
@@ -161,15 +175,76 @@ export default function LeadCapture() {
                     )}
                   />
                 </div>
+                <div className="grid sm:grid-cols-2 gap-5">
+                  <FormField
+                    control={form.control}
+                    name="cartorio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Cartório</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="1º Tabelionato de Notas"
+                            className="h-11"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="cnpj"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CNPJ</FormLabel>
+                        <FormControl>
+                          <Input placeholder="00.000.000/0000-00" className="h-11" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="lgpd"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-lg bg-slate-50">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="mt-1"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-medium text-slate-700 leading-snug">
+                          Autorizo a Tiexpress Soluções a entrar em contato para apresentar soluções
+                          de conformidade ao Provimento 213.
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
 
                 <div className="pt-4">
                   <Button
                     type="submit"
                     size="lg"
                     className="w-full h-14 text-base rounded-xl group"
+                    disabled={isSubmitting}
                   >
-                    Iniciar Checklist
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    {isSubmitting ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        Ver Resultados{' '}
+                        <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
                   </Button>
                 </div>
               </form>

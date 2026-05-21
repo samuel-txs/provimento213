@@ -1,0 +1,81 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/use-auth'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { ShieldCheck, Loader2 } from 'lucide-react'
+import { toast } from '@/hooks/use-toast'
+
+export default function Login() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const { signIn } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    const { error } = await signIn(email, password)
+    setLoading(false)
+
+    if (error) {
+      toast({
+        title: 'Acesso Negado',
+        description: 'E-mail ou senha incorretos.',
+        variant: 'destructive',
+      })
+    } else {
+      navigate('/admin')
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+      <div className="mb-8 flex flex-col items-center">
+        <ShieldCheck className="h-12 w-12 text-primary mb-2" />
+        <h1 className="text-2xl font-bold text-white tracking-tight">Tiexpress CRM</h1>
+      </div>
+      <Card className="w-full max-w-md bg-slate-900 border-slate-800 text-white shadow-2xl">
+        <CardHeader>
+          <CardTitle className="text-xl">Acesso Restrito</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-slate-300">
+                E-mail
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-white"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-slate-300">
+                Senha
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-white"
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Entrar'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

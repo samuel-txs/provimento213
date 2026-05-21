@@ -41,43 +41,53 @@ export default function Result() {
   }
 
   const getStatus = (s: number) => {
-    if (s >= 80)
+    if (s >= 91)
       return {
-        label: 'Conforme',
+        label: 'Excelente',
         color: 'bg-secondary',
         textColor: 'text-secondary',
         icon: CheckCircle2,
-        message: 'Excelente! Sua serventia apresenta um alto nível de adequação.',
+        message: 'Sua serventia apresenta um nível excepcional de adequação.',
       }
-    if (s >= 50)
+    if (s >= 71)
+      return {
+        label: 'Adequado',
+        color: 'bg-blue-600',
+        textColor: 'text-blue-600',
+        icon: CheckCircle2,
+        message: 'Bom nível de conformidade, mas alguns pontos podem ser melhorados.',
+      }
+    if (s >= 41)
       return {
         label: 'Atenção',
         color: 'bg-accent',
         textColor: 'text-accent',
         icon: AlertTriangle,
-        message: 'Requer atenção. Há pontos importantes que precisam ser ajustados.',
+        message: 'Requer atenção. Há diversos pontos importantes que precisam ser ajustados.',
       }
     return {
       label: 'Crítico',
       color: 'bg-destructive',
       textColor: 'text-destructive',
       icon: XCircle,
-      message: 'Risco Alto. Sua infraestrutura não atende aos requisitos mínimos.',
+      message: 'Risco Alto. Sua infraestrutura necessita de adequação urgente.',
     }
   }
 
   const status = getStatus(score)
   const StatusIcon = status.icon
 
-  const itemsToImprove = QUESTIONS.filter(
-    (q) => answers[q.id] === 'nao' || answers[q.id] === 'parcial',
+  const { questions } = useChecklist()
+
+  const itemsToImprove = questions.filter(
+    (q) => answers[q.id] === 'nao' || answers[q.id] === 'naosei' || answers[q.id] === 'parcial',
   )
 
-  // Group items by category for the accordion
-  const groupedItems = CATEGORIES.map((cat) => ({
-    ...cat,
-    items: itemsToImprove.filter((item) => item.categoryId === cat.id),
-  })).filter((cat) => cat.items.length > 0)
+  const cats = Array.from(new Set(itemsToImprove.map((i) => i.categoria)))
+  const groupedItems = cats.map((cat) => ({
+    title: cat,
+    items: itemsToImprove.filter((i) => i.categoria === cat),
+  }))
 
   const handleDownloadMock = () => {
     toast({
@@ -93,8 +103,7 @@ export default function Result() {
         <div className="text-center space-y-2 animate-slide-down">
           <h1 className="text-3xl font-bold text-slate-900">Relatório de Conformidade</h1>
           <p className="text-slate-500">
-            Serventia:{' '}
-            <span className="font-semibold text-slate-700">{leadData.nomeServentia}</span>
+            Serventia: <span className="font-semibold text-slate-700">{leadData.cartorio}</span>
           </p>
         </div>
 
@@ -206,15 +215,19 @@ export default function Result() {
 
                           <div className="mb-2">
                             <span className="text-sm font-medium text-slate-500 block mb-1">
-                              Requisito não atendido:
+                              Requisito:
                             </span>
-                            <p className="text-slate-800">{item.text}</p>
+                            <p className="text-slate-800">{item.texto_pergunta}</p>
                           </div>
-                          <div className="bg-slate-50 p-4 rounded-md border-l-4 border-l-primary">
+                          <div className="bg-slate-50 p-4 rounded-md border-l-4 border-l-primary mt-2">
                             <span className="text-sm font-semibold text-primary block mb-1">
-                              O que fazer:
+                              Recomendação:
                             </span>
-                            <p className="text-sm text-slate-700">{item.recommendation}</p>
+                            <p className="text-sm text-slate-700">
+                              Verifique esta exigência e implemente as medidas necessárias para
+                              garantir a conformidade técnica, entrando em contato com especialistas
+                              se necessário.
+                            </p>
                           </div>
                         </div>
                       ))}

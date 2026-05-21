@@ -47,7 +47,7 @@ export function Layout() {
               ))}
             </div>
             <Button asChild className="rounded-full px-6 font-semibold shadow-elevation">
-              <Link to="/identificacao">Fazer Diagnóstico</Link>
+              <Link to="/checklist">Fazer Diagnóstico</Link>
             </Button>
           </nav>
 
@@ -79,7 +79,7 @@ export function Layout() {
               </a>
             ))}
             <Button asChild className="w-full mt-2">
-              <Link to="/identificacao">Fazer Diagnóstico Gratuito</Link>
+              <Link to="/checklist">Fazer Diagnóstico Gratuito</Link>
             </Button>
           </div>
         </div>
@@ -113,7 +113,7 @@ export function Layout() {
             <h3 className="font-semibold text-white mb-4">Links Rápidos</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/identificacao" className="hover:text-white transition-colors">
+                <Link to="/checklist" className="hover:text-white transition-colors">
                   Iniciar Checklist
                 </Link>
               </li>

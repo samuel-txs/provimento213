@@ -41,7 +41,7 @@ export default function Index() {
               asChild
               className="w-full sm:w-auto text-base rounded-full px-8 shadow-elevation h-14"
             >
-              <Link to="/identificacao">
+              <Link to="/checklist">
                 Iniciar Diagnóstico Gratuito
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
@@ -157,7 +157,7 @@ export default function Index() {
             asChild
             className="rounded-full px-10 h-14 text-lg bg-secondary hover:bg-secondary/90 text-white shadow-lg shadow-secondary/25 border-none"
           >
-            <Link to="/identificacao">Começar Meu Diagnóstico Agora</Link>
+            <Link to="/checklist">Começar Meu Diagnóstico Agora</Link>
           </Button>
           <p className="text-sm text-slate-400 mt-6 flex items-center justify-center gap-2">
             <Lock className="h-4 w-4" /> Seus dados estão 100% seguros e não serão compartilhados.

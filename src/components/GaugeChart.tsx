@@ -12,8 +12,9 @@ export function GaugeChart({ score }: GaugeChartProps) {
   ]
 
   const getColor = (s: number) => {
-    if (s >= 80) return 'hsl(var(--secondary))' // Green (Conforme)
-    if (s >= 50) return 'hsl(var(--accent))' // Amber (Atenção)
+    if (s >= 91) return 'hsl(var(--secondary))' // Green (Excelente)
+    if (s >= 71) return '#2563eb' // Blue (Adequado)
+    if (s >= 41) return 'hsl(var(--accent))' // Amber (Atenção)
     return 'hsl(var(--destructive))' // Red (Crítico)
   }
 

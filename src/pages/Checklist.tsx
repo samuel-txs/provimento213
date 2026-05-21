@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, Navigate } from 'react-router-dom'
-import { useChecklist } from '@/hooks/use-checklist'
-import { CATEGORIES, QUESTIONS, AnswerValue } from '@/lib/questions'
+import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useChecklist, AnswerValue } from '@/hooks/use-checklist'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -14,36 +13,47 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card'
-import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function Checklist() {
   const navigate = useNavigate()
-  const { leadData, answers, setAnswer } = useChecklist()
+  const { answers, setAnswer, questions, loadingQuestions } = useChecklist()
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0)
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [currentCategoryIndex])
 
-  // Protect route
-  if (!leadData) {
-    return <Navigate to="/identificacao" replace />
+  const categories = useMemo(() => {
+    const cats = new Set(questions.map((q) => q.categoria))
+    return Array.from(cats)
+  }, [questions])
+
+  if (loadingQuestions) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
-  const currentCategory = CATEGORIES[currentCategoryIndex]
-  const currentQuestions = QUESTIONS.filter((q) => q.categoryId === currentCategory.id)
-  const isLastCategory = currentCategoryIndex === CATEGORIES.length - 1
+  if (categories.length === 0) {
+    return <div className="p-8 text-center">Nenhuma pergunta encontrada.</div>
+  }
+
+  const currentCategory = categories[currentCategoryIndex]
+  const currentQuestions = questions.filter((q) => q.categoria === currentCategory)
+  const isLastCategory = currentCategoryIndex === categories.length - 1
   const isCategoryComplete = currentQuestions.every((q) => answers[q.id])
 
-  // Progress calculates based on completed questions across ALL categories for smoother bar
-  const totalQuestions = QUESTIONS.length
+  const totalQuestions = questions.length
   const answeredQuestions = Object.keys(answers).length
-  const progress = (answeredQuestions / totalQuestions) * 100
+  const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0
 
   const handleNext = () => {
     if (isLastCategory) {
-      navigate('/resultado')
+      navigate('/identificacao')
     } else {
       setCurrentCategoryIndex((prev) => prev + 1)
     }
@@ -56,24 +66,54 @@ export default function Checklist() {
   return (
     <div className="flex-1 bg-muted/20 py-8 px-4 animate-fade-in">
       <div className="container max-w-3xl mx-auto">
-        {/* Progress Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex flex-col items-center justify-center">
+            <span className="text-2xl font-extrabold text-primary tracking-tighter uppercase">
+              Tiexpress
+            </span>
+            <span className="text-sm text-slate-500 font-medium">Expresse seu negócio!</span>
+          </div>
+        </div>
+
         <div className="mb-8 sticky top-20 z-10 bg-background/95 backdrop-blur p-4 rounded-xl shadow-sm border">
           <div className="flex justify-between text-sm font-medium mb-3 text-slate-600">
             <span>Progresso Geral</span>
             <span>{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} className="h-2.5" />
-          <div className="mt-4 text-xs font-semibold text-primary uppercase tracking-wider">
-            Etapa {currentCategoryIndex + 1} de {CATEGORIES.length}
+
+          {/* Tabs UI */}
+          <div className="flex space-x-2 overflow-x-auto mt-6 pb-2 scrollbar-hide">
+            {categories.map((cat, idx) => {
+              const catQuestions = questions.filter((q) => q.categoria === cat)
+              const isCatComplete = catQuestions.every((q) => answers[q.id])
+              const isActive = idx === currentCategoryIndex
+
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setCurrentCategoryIndex(idx)}
+                  className={cn(
+                    'whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors border',
+                    isActive
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : isCatComplete
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200',
+                  )}
+                >
+                  {cat} {isCatComplete && <CheckCircle2 className="inline-block ml-1 h-3 w-3" />}
+                </button>
+              )
+            })}
           </div>
         </div>
 
-        {/* Category Card */}
         <Card className="border-none shadow-elevation animate-slide-up">
           <CardHeader className="bg-primary text-primary-foreground rounded-t-xl pb-6">
-            <CardTitle className="text-2xl">{currentCategory.title}</CardTitle>
+            <CardTitle className="text-2xl">{currentCategory}</CardTitle>
             <CardDescription className="text-primary-foreground/80 text-base mt-2">
-              {currentCategory.description}
+              Responda às questões referentes à categoria de {currentCategory}.
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -86,76 +126,67 @@ export default function Checklist() {
                 >
                   <h3 className="text-lg font-medium text-slate-800 mb-6 leading-relaxed">
                     <span className="text-primary mr-2 font-bold">{index + 1}.</span>
-                    {q.text}
+                    {q.texto_pergunta}
                   </h3>
 
                   <RadioGroup
                     onValueChange={(val) => setAnswer(q.id, val as AnswerValue)}
                     value={answers[q.id] || ''}
-                    className="flex flex-col space-y-3"
+                    className="grid sm:grid-cols-2 gap-3"
                   >
-                    <div
-                      className={cn(
-                        'flex items-center space-x-3 border-2 p-4 rounded-lg cursor-pointer transition-all',
-                        answers[q.id] === 'sim'
-                          ? 'border-secondary bg-secondary/5'
-                          : 'hover:bg-muted/50 border-transparent bg-muted/20',
-                      )}
-                    >
-                      <RadioGroupItem
-                        value="sim"
-                        id={`${q.id}-sim`}
-                        className="h-5 w-5 border-slate-300 data-[state=checked]:border-secondary data-[state=checked]:text-secondary"
-                      />
-                      <Label
-                        htmlFor={`${q.id}-sim`}
-                        className="flex-1 cursor-pointer text-base font-medium"
+                    {[
+                      { value: 'completo', label: 'Completo' },
+                      { value: 'parcial', label: 'Parcial' },
+                      { value: 'nao', label: 'Não' },
+                      { value: 'naosei', label: 'Não Sei Informar' },
+                    ].map((opt) => (
+                      <div
+                        key={opt.value}
+                        className={cn(
+                          'flex items-center space-x-3 border-2 p-4 rounded-lg cursor-pointer transition-all',
+                          answers[q.id] !== opt.value &&
+                            'hover:bg-muted/50 border-transparent bg-muted/20',
+                          answers[q.id] === opt.value &&
+                            opt.value === 'completo' &&
+                            'border-secondary bg-secondary/5',
+                          answers[q.id] === opt.value &&
+                            opt.value === 'parcial' &&
+                            'border-accent bg-accent/5',
+                          answers[q.id] === opt.value &&
+                            opt.value === 'nao' &&
+                            'border-destructive bg-destructive/5',
+                          answers[q.id] === opt.value &&
+                            opt.value === 'naosei' &&
+                            'border-slate-500 bg-slate-500/5',
+                        )}
                       >
-                        Sim, totalmente adequado
-                      </Label>
-                    </div>
-
-                    <div
-                      className={cn(
-                        'flex items-center space-x-3 border-2 p-4 rounded-lg cursor-pointer transition-all',
-                        answers[q.id] === 'parcial'
-                          ? 'border-accent bg-accent/5'
-                          : 'hover:bg-muted/50 border-transparent bg-muted/20',
-                      )}
-                    >
-                      <RadioGroupItem
-                        value="parcial"
-                        id={`${q.id}-parcial`}
-                        className="h-5 w-5 border-slate-300 data-[state=checked]:border-accent data-[state=checked]:text-accent"
-                      />
-                      <Label
-                        htmlFor={`${q.id}-parcial`}
-                        className="flex-1 cursor-pointer text-base font-medium"
-                      >
-                        Parcialmente / Em andamento
-                      </Label>
-                    </div>
-
-                    <div
-                      className={cn(
-                        'flex items-center space-x-3 border-2 p-4 rounded-lg cursor-pointer transition-all',
-                        answers[q.id] === 'nao'
-                          ? 'border-destructive bg-destructive/5'
-                          : 'hover:bg-muted/50 border-transparent bg-muted/20',
-                      )}
-                    >
-                      <RadioGroupItem
-                        value="nao"
-                        id={`${q.id}-nao`}
-                        className="h-5 w-5 border-slate-300 data-[state=checked]:border-destructive data-[state=checked]:text-destructive"
-                      />
-                      <Label
-                        htmlFor={`${q.id}-nao`}
-                        className="flex-1 cursor-pointer text-base font-medium"
-                      >
-                        Não implementado
-                      </Label>
-                    </div>
+                        <RadioGroupItem
+                          value={opt.value}
+                          id={`${q.id}-${opt.value}`}
+                          className={cn(
+                            'h-5 w-5 border-slate-300',
+                            answers[q.id] === opt.value &&
+                              opt.value === 'completo' &&
+                              'border-secondary text-secondary',
+                            answers[q.id] === opt.value &&
+                              opt.value === 'parcial' &&
+                              'border-accent text-accent',
+                            answers[q.id] === opt.value &&
+                              opt.value === 'nao' &&
+                              'border-destructive text-destructive',
+                            answers[q.id] === opt.value &&
+                              opt.value === 'naosei' &&
+                              'border-slate-500 text-slate-500',
+                          )}
+                        />
+                        <Label
+                          htmlFor={`${q.id}-${opt.value}`}
+                          className="flex-1 cursor-pointer text-base font-medium"
+                        >
+                          {opt.label}
+                        </Label>
+                      </div>
+                    ))}
                   </RadioGroup>
                 </div>
               ))}
@@ -181,7 +212,7 @@ export default function Checklist() {
             >
               {isLastCategory ? (
                 <>
-                  Finalizar Diagnóstico <CheckCircle2 className="ml-2 h-4 w-4" />
+                  Ver Resultado <CheckCircle2 className="ml-2 h-4 w-4" />
                 </>
               ) : (
                 <>
