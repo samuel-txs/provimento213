@@ -22,6 +22,10 @@ export default function Checklist() {
   const { leadData, answers, setAnswer } = useChecklist()
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0)
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [currentCategoryIndex])
+
   // Protect route
   if (!leadData) {
     return <Navigate to="/identificacao" replace />
@@ -36,10 +40,6 @@ export default function Checklist() {
   const totalQuestions = QUESTIONS.length
   const answeredQuestions = Object.keys(answers).length
   const progress = (answeredQuestions / totalQuestions) * 100
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [currentCategoryIndex])
 
   const handleNext = () => {
     if (isLastCategory) {

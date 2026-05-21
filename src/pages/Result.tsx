@@ -26,18 +26,19 @@ import { toast } from '@/hooks/use-toast'
 export default function Result() {
   const { leadData, score, answers, reset } = useChecklist()
 
-  if (!leadData) {
-    return <Navigate to="/" replace />
-  }
-
   // Simulate API Call for persistence
   useEffect(() => {
+    if (!leadData) return
     console.log('Mock: Saving lead and score to DB...', { leadData, score, answers })
     toast({
       title: 'Diagnóstico Concluído!',
       description: 'Seus resultados foram gerados com sucesso.',
     })
   }, [leadData, score, answers])
+
+  if (!leadData) {
+    return <Navigate to="/" replace />
+  }
 
   const getStatus = (s: number) => {
     if (s >= 80)
