@@ -139,9 +139,9 @@ export default function Result() {
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <Button
-                  onClick={handleDownloadMock}
+                  onClick={() => window.print()}
                   variant="outline"
-                  className="w-full h-14 justify-start text-left px-6 text-base"
+                  className="w-full h-14 justify-start text-left px-6 text-base print:hidden"
                 >
                   <Download className="mr-4 h-5 w-5 text-primary" />
                   <div>
@@ -152,7 +152,7 @@ export default function Result() {
                   </div>
                 </Button>
 
-                <Button className="w-full h-14 justify-start text-left px-6 text-base bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button className="w-full h-14 justify-start text-left px-6 text-base bg-emerald-600 hover:bg-emerald-700 text-white print:hidden">
                   <Send className="mr-4 h-5 w-5" />
                   <div>
                     <div className="font-semibold">Falar com Especialista</div>
@@ -172,10 +172,125 @@ export default function Result() {
           </Card>
         </div>
 
+        {/* Advanced EOL Matrix (Printable) */}
+        <Card className="border-none shadow-elevation mt-8 animate-slide-up bg-white print:block">
+          <CardHeader className="bg-slate-50 border-b print:bg-transparent">
+            <CardTitle>Matriz EOL & Adequação</CardTitle>
+            <CardDescription>
+              Resumo da infraestrutura de Hardware e Software baseada nas respostas do diagnóstico.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div>
+                <h4 className="font-semibold text-slate-800 mb-3 border-b pb-2">
+                  Hardware / Infraestrutura
+                </h4>
+                <ul className="space-y-2 text-sm">
+                  {answers['q_hardware_eol'] === 'nao' ? (
+                    <li className="flex justify-between items-center">
+                      <span className="text-slate-600">Servidores Legados</span>{' '}
+                      <Badge variant="destructive">Crítico</Badge>
+                    </li>
+                  ) : (
+                    <li className="flex justify-between items-center">
+                      <span className="text-slate-600">Servidores / Storages</span>{' '}
+                      <Badge className="bg-emerald-500 text-white">Adequado</Badge>
+                    </li>
+                  )}
+
+                  {answers['q_backup'] === 'nao' || answers['q_backup'] === 'parcial' ? (
+                    <li className="flex justify-between items-center">
+                      <span className="text-slate-600">Solução de Backup</span>{' '}
+                      <Badge className="bg-amber-500 text-white">Revisar</Badge>
+                    </li>
+                  ) : (
+                    <li className="flex justify-between items-center">
+                      <span className="text-slate-600">Rotinas de Backup</span>{' '}
+                      <Badge className="bg-emerald-500 text-white">Adequado</Badge>
+                    </li>
+                  )}
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-semibold text-slate-800 mb-3 border-b pb-2">
+                  Software / Segurança
+                </h4>
+                <ul className="space-y-2 text-sm">
+                  {answers['q_software_eol'] === 'nao' ? (
+                    <li className="flex justify-between items-center">
+                      <span className="text-slate-600">
+                        Sistemas Operacionais (Ex: Win Server 2012)
+                      </span>{' '}
+                      <Badge variant="destructive">Substituir</Badge>
+                    </li>
+                  ) : (
+                    <li className="flex justify-between items-center">
+                      <span className="text-slate-600">Sistemas Operacionais</span>{' '}
+                      <Badge className="bg-emerald-500 text-white">Atualizados</Badge>
+                    </li>
+                  )}
+
+                  {answers['q_firewall'] === 'nao' ? (
+                    <li className="flex justify-between items-center">
+                      <span className="text-slate-600">Firewall e Proteção Perimetral</span>{' '}
+                      <Badge className="bg-amber-500 text-white">Implementar</Badge>
+                    </li>
+                  ) : (
+                    <li className="flex justify-between items-center">
+                      <span className="text-slate-600">Firewall de Borda</span>{' '}
+                      <Badge className="bg-emerald-500 text-white">Configurado</Badge>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t">
+              <h4 className="font-semibold text-slate-800 mb-4">Timeline Recomendada</h4>
+              <div className="flex flex-col md:flex-row gap-4 justify-between relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 md:before:translate-y-6 before:h-full md:before:h-0.5 md:before:w-full before:w-0.5 before:bg-slate-200">
+                <div className="relative z-10 flex flex-row md:flex-col items-center gap-4 text-center">
+                  <div className="h-10 w-10 rounded-full bg-red-100 text-red-600 font-bold flex items-center justify-center shrink-0 border-2 border-white shadow">
+                    1
+                  </div>
+                  <div className="text-left md:text-center">
+                    <h5 className="font-semibold text-slate-800">Urgente (Imediato)</h5>
+                    <p className="text-xs text-slate-500 max-w-[150px]">
+                      Ativos Críticos EOL (Sem suporte)
+                    </p>
+                  </div>
+                </div>
+                <div className="relative z-10 flex flex-row md:flex-col items-center gap-4 text-center">
+                  <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-600 font-bold flex items-center justify-center shrink-0 border-2 border-white shadow">
+                    2
+                  </div>
+                  <div className="text-left md:text-center">
+                    <h5 className="font-semibold text-slate-800">Curto Prazo (30d)</h5>
+                    <p className="text-xs text-slate-500 max-w-[150px]">
+                      Políticas, Backup e Antivírus
+                    </p>
+                  </div>
+                </div>
+                <div className="relative z-10 flex flex-row md:flex-col items-center gap-4 text-center">
+                  <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-600 font-bold flex items-center justify-center shrink-0 border-2 border-white shadow">
+                    3
+                  </div>
+                  <div className="text-left md:text-center">
+                    <h5 className="font-semibold text-slate-800">Médio Prazo (90d)</h5>
+                    <p className="text-xs text-slate-500 max-w-[150px]">
+                      Renovação de Licenças e Treinamento
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Detailed Breakdown */}
         {itemsToImprove.length > 0 ? (
           <Card
-            className="border-none shadow-elevation mt-8 animate-slide-up"
+            className="border-none shadow-elevation mt-8 animate-slide-up print:block"
             style={{ animationDelay: '0.2s' }}
           >
             <CardHeader className="bg-slate-50 border-b">
@@ -250,12 +365,12 @@ export default function Result() {
           </Card>
         )}
 
-        <div className="flex justify-center pt-8 pb-4">
+        <div className="flex justify-center pt-8 pb-4 print:hidden">
           <Button
             variant="ghost"
             asChild
             onClick={reset}
-            className="text-slate-500 hover:text-slate-800"
+            className="text-slate-500 hover:text-slate-800 print:hidden"
           >
             <Link to="/">
               <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao Início

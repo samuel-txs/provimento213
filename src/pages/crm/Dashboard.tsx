@@ -21,8 +21,9 @@ import {
   Cell,
 } from 'recharts'
 import { format } from 'date-fns'
-import { Edit, Loader2 } from 'lucide-react'
+import { Edit, Loader2, Eye, TrendingUp, Users, DollarSign, Clock } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { Link } from 'react-router-dom'
 
 type Lead = {
   id: string
@@ -34,6 +35,8 @@ type Lead = {
   created: string
   email: string
   telefone: string
+  receita_potencial?: number
+  data_ultima_negociacao?: string
 }
 
 export default function Dashboard() {
@@ -78,17 +81,48 @@ export default function Dashboard() {
     }
   }
 
-  const funnelData = useMemo(() => {
+  const { funnelData, scoreData, metrics } = useMemo(() => {
     const counts = { novo: 0, contatado: 0, negociando: 0, convertido: 0 }
+    const scoreBuckets = { alto: { total: 0, conv: 0 }, medio: { total: 0, conv: 0 }, baixo: { total: 0, conv: 0 } }
+    let totalReceita = 0
+    let totalConvertido = 0
+    
     leads.forEach((l) => {
       if (l.status in counts) counts[l.status as keyof typeof counts]++
+      
+      const s = l.score || 0
+      const isConv = l.status === 'convertido'
+      if (isConv) totalConvertido++
+      
+      totalReceita += (l.receita_potencial || 0)
+
+      if (s >= 71) { scoreBuckets.alto.total++; if(isConv) scoreBuckets.alto.conv++; }
+      else if (s >= 41) { scoreBuckets.medio.total++; if(isConv) scoreBuckets.medio.conv++; }
+      else { scoreBuckets.baixo.total++; if(isConv) scoreBuckets.baixo.conv++; }
     })
-    return [
+    
+    const funnel = [
       { name: 'Novos', count: counts.novo, color: '#3b82f6' },
       { name: 'Contatados', count: counts.contatado, color: '#f59e0b' },
       { name: 'Negociando', count: counts.negociando, color: '#8b5cf6' },
       { name: 'Convertidos', count: counts.convertido, color: '#10b981' },
     ]
+
+    const scores = [
+      { name: 'Baixo (<40)', rate: scoreBuckets.baixo.total ? Math.round((scoreBuckets.baixo.conv / scoreBuckets.baixo.total)*100) : 0, fill: '#ef4444' },
+      { name: 'Médio (41-70)', rate: scoreBuckets.medio.total ? Math.round((scoreBuckets.medio.conv / scoreBuckets.medio.total)*100) : 0, fill: '#f59e0b' },
+      { name: 'Alto (>70)', rate: scoreBuckets.alto.total ? Math.round((scoreBuckets.alto.conv / scoreBuckets.alto.total)*100) : 0, fill: '#10b981' },
+    ]
+
+    return { 
+      funnelData: funnel, 
+      scoreData: scores,
+      metrics: {
+        receita: totalReceita,
+        taxaGeral: leads.length ? Math.round((totalConvertido / leads.length) * 100) : 0,
+        ativos: counts.novo + counts.contatado + counts.negociando
+      }
+    }
   }, [leads])
 
   const getStatusBadge = (status: string) => {
@@ -131,13 +165,52 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Funnel Chart */}
-      <Card className="bg-slate-900 border-slate-800 text-white">
-        <CardHeader>
-          <CardTitle className="text-lg">Funil de Vendas</CardTitle>
-        </CardHeader>
-        <CardContent>
+    <div className="space-y-6 animate-fade-in pb-12">
+      
+      {/* Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-slate-900 border-slate-800 text-white">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="p-3 bg-blue-500/20 rounded-lg">
+              <Users className="h-6 w-6 text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-400">Leads Ativos (Pipeline)</p>
+              <h3 className="text-2xl font-bold">{metrics.ativos}</h3>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-900 border-slate-800 text-white">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="p-3 bg-emerald-500/20 rounded-lg">
+              <TrendingUp className="h-6 w-6 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-400">Taxa de Conversão Global</p>
+              <h3 className="text-2xl font-bold">{metrics.taxaGeral}%</h3>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-900 border-slate-800 text-white">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="p-3 bg-purple-500/20 rounded-lg">
+              <DollarSign className="h-6 w-6 text-purple-400" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-400">Receita Potencial (Pipeline)</p>
+              <h3 className="text-2xl font-bold">R$ {metrics.receita.toLocaleString('pt-BR')}</h3>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Funnel Chart */}
+        <Card className="bg-slate-900 border-slate-800 text-white">
+          <CardHeader>
+            <CardTitle className="text-lg">Volume do Funil</CardTitle>
+          </CardHeader>
+          <CardContent>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={funnelData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
@@ -172,7 +245,32 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
         </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Score Conversion Chart */}
+        <Card className="bg-slate-900 border-slate-800 text-white">
+          <CardHeader>
+            <CardTitle className="text-lg">Conversão por Score Diagnóstico</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={scoreData} layout="vertical" margin={{ top: 20, right: 30, left: 40, bottom: 0 }}>
+                  <XAxis type="number" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} unit="%" />
+                  <YAxis dataKey="name" type="category" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                  <RechartsTooltip cursor={{ fill: '#1e293b' }} contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', color: '#fff' }} />
+                  <Bar dataKey="rate" radius={[0, 4, 4, 0]} maxBarSize={40}>
+                    {scoreData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Leads Table */}
       <Card className="bg-slate-900 border-slate-800 text-white">
@@ -222,14 +320,26 @@ export default function Dashboard() {
                     </span>
                   </TableCell>
                   <TableCell>{getStatusBadge(lead.status)}</TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right flex justify-end gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 text-slate-400 hover:text-white"
                       onClick={() => handleEditClick(lead)}
+                      title="Edição Rápida"
                     >
                       <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      asChild
+                      className="h-8 w-8 p-0 text-slate-400 hover:text-primary"
+                      title="Ver Detalhes"
+                    >
+                      <Link to={`/admin/leads/${lead.id}`}>
+                        <Eye className="h-4 w-4" />
+                      </Link>
                     </Button>
                   </TableCell>
                 </TableRow>

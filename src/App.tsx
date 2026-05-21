@@ -13,6 +13,7 @@ import Result from './pages/Result'
 import CrmLayout from './pages/crm/CrmLayout'
 import Dashboard from './pages/crm/Dashboard'
 import Login from './pages/crm/Login'
+import LeadDetail from './pages/crm/LeadDetail'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/admin/login" element={<Login />} />
             <Route path="/admin" element={<CrmLayout />}>
               <Route index element={<Dashboard />} />
+              <Route path="leads/:id" element={<LeadDetail />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
