@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import heroImg from '@/assets/hero-7d34f.png'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   ShieldAlert,
@@ -49,9 +50,12 @@ export default function Index() {
             <Button
               variant="outline"
               size="lg"
+              asChild
               className="w-full sm:w-auto text-base rounded-full px-8 h-14 bg-white hover:bg-slate-50"
             >
-              Falar com Especialista
+              <a href="https://wa.me/5562984778861" target="_blank" rel="noopener noreferrer">
+                Falar com Especialista
+              </a>
             </Button>
           </div>
         </div>
@@ -61,11 +65,11 @@ export default function Index() {
           className="container relative z-10 mx-auto px-4 mt-16 animate-slide-up"
           style={{ animationDelay: '0.2s' }}
         >
-          <div className="relative rounded-2xl overflow-hidden shadow-2xl border bg-white aspect-[21/9] max-w-5xl mx-auto flex items-center justify-center">
+          <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-800 bg-slate-900 aspect-video md:aspect-[21/9] max-w-5xl mx-auto flex items-center justify-center">
             <img
-              src="https://img.usecurling.com/p/1200/500?q=server%20room&color=blue"
-              alt="Infraestrutura de TI segura"
-              className="object-cover w-full h-full opacity-90 hover:scale-105 transition-transform duration-1000"
+              src={heroImg}
+              alt="Infraestrutura de TI segura Provimento 213"
+              className="object-cover w-full h-full hover:scale-105 transition-transform duration-1000"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent flex items-end p-8">
               <div className="bg-white/90 backdrop-blur rounded-xl p-4 shadow-lg flex items-center gap-4 animate-float">

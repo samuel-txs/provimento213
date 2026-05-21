@@ -143,9 +143,12 @@ export function Layout() {
             <p className="text-sm mb-2">Precisa de ajuda com sua adequação?</p>
             <Button
               variant="outline"
-              className="border-slate-700 text-slate-800 hover:text-slate-900 hover:bg-slate-100 w-full sm:w-auto"
+              asChild
+              className="border-slate-700 text-white hover:text-slate-900 hover:bg-slate-100 w-full sm:w-auto"
             >
-              Chamar no WhatsApp
+              <a href="https://wa.me/5562984778861" target="_blank" rel="noopener noreferrer">
+                WhatsApp: 62 98477-8861
+              </a>
             </Button>
           </div>
         </div>
