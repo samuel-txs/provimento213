@@ -24,7 +24,7 @@ import {
 import { toast } from '@/hooks/use-toast'
 
 export default function Result() {
-  const { leadData, score, answers, reset } = useChecklist()
+  const { leadData, score, answers, reset, questions } = useChecklist()
 
   // Simulate API Call for persistence
   useEffect(() => {
@@ -76,8 +76,6 @@ export default function Result() {
 
   const status = getStatus(score)
   const StatusIcon = status.icon
-
-  const { questions } = useChecklist()
 
   const itemsToImprove = questions.filter(
     (q) => answers[q.id] === 'nao' || answers[q.id] === 'naosei' || answers[q.id] === 'parcial',
