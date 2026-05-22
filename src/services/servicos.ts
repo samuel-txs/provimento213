@@ -45,6 +45,22 @@ export const updateServico = async (id: string, data: any) => {
 }
 
 export const deleteServico = async (id: string) => {
+  const precos = await pb
+    .collection('precos_servicos')
+    .getFullList({ filter: `servico_id = "${id}"` })
+    .catch(() => [])
+  await Promise.all(
+    precos.map((p) => pb.collection('precos_servicos').delete(p.id).catch(console.warn)),
+  )
+
+  const carrinhos = await pb
+    .collection('carrinho_servicos')
+    .getFullList({ filter: `servico_id = "${id}"` })
+    .catch(() => [])
+  await Promise.all(
+    carrinhos.map((c) => pb.collection('carrinho_servicos').delete(c.id).catch(console.warn)),
+  )
+
   return pb.collection('servicos').delete(id)
 }
 

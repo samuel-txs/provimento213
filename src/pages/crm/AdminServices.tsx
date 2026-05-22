@@ -34,6 +34,7 @@ import {
 import { Plus, Edit, Trash2, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRealtime } from '@/hooks/use-realtime'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
 
 export default function AdminServices() {
   const [servicos, setServicos] = useState<any[]>([])
@@ -90,12 +91,23 @@ export default function AdminServices() {
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza?')) {
+    if (
+      confirm(
+        'Tem certeza que deseja excluir este serviço? Esta ação excluirá os itens dependentes associados (ex: preços).',
+      )
+    ) {
       try {
         await deleteServico(id)
         toast.success('Deletado com sucesso')
-      } catch (e) {
-        toast.error('Erro ao deletar')
+      } catch (e: any) {
+        const msg = getErrorMessage(e)
+        if (msg.includes('Failed to delete record')) {
+          toast.error(
+            'Não é possível excluir o serviço pois existem registros dependentes (ex: propostas ativas) que exigem intervenção manual.',
+          )
+        } else {
+          toast.error('Erro ao deletar: ' + msg)
+        }
       }
     }
   }
