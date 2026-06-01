@@ -19,6 +19,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { ShieldCheck, ArrowRight, Loader2 } from 'lucide-react'
 import { createLead, createResposta, createScore } from '@/services/api'
 import { toast } from '@/hooks/use-toast'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
 
 const formSchema = z.object({
   nome: z.string().min(3, 'Mínimo de 3 caracteres'),
@@ -53,13 +54,13 @@ export default function LeadCapture() {
       setIsSubmitting(true)
 
       const leadPayload = {
-        nome: values.nome,
-        email: values.email,
-        telefone: values.telefone,
-        cartorio: values.cartorio,
-        cnpj: values.cnpj,
+        nome: String(values.nome),
+        email: String(values.email),
+        telefone: String(values.telefone),
+        cartorio: String(values.cartorio),
+        cnpj: String(values.cnpj),
         status: 'novo',
-        score: score,
+        score: Number(score) || 0,
       }
 
       const lead = await createLead(leadPayload)
@@ -70,9 +71,9 @@ export default function LeadCapture() {
         if (!question) return Promise.resolve()
         return createResposta({
           lead_id: lead.id,
-          pergunta_id: question.id,
-          resposta: answer,
-          categoria: question.categoria,
+          pergunta_id: String(question.id),
+          resposta: String(answer),
+          categoria: String(question.categoria),
         })
       })
       await Promise.all(resPromises)
@@ -80,7 +81,7 @@ export default function LeadCapture() {
       // Save score
       await createScore({
         lead_id: lead.id,
-        score_total: score,
+        score_total: Number(score) || 0,
       })
 
       setLeadData(values)
@@ -92,8 +93,9 @@ export default function LeadCapture() {
     } catch (err) {
       console.error(err)
       toast({
-        title: 'Erro',
-        description: 'Ocorreu um erro ao salvar os dados.',
+        title: 'Erro no cadastro',
+        description:
+          getErrorMessage(err) || 'Verifique se os dados estão corretos e tente novamente.',
         variant: 'destructive',
       })
     } finally {
