@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
-import { AnswerValue } from '@/lib/questions'
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react'
+import pb from '@/lib/pocketbase/client'
+import { useRealtime } from '@/hooks/use-realtime'
 
 export interface LeadData {
   nome: string
@@ -37,19 +38,26 @@ export function ChecklistProvider({ children }: { children: ReactNode }) {
   const [questions, setQuestions] = useState<Question[]>([])
   const [loadingQuestions, setLoadingQuestions] = useState(true)
 
-  React.useEffect(() => {
-    import('@/services/api').then(({ getPerguntas }) => {
-      getPerguntas()
-        .then((res) => {
-          setQuestions(res as any)
-          setLoadingQuestions(false)
-        })
-        .catch((err) => {
-          console.error(err)
-          setLoadingQuestions(false)
-        })
-    })
+  const fetchQuestions = async () => {
+    try {
+      const records = await pb
+        .collection('perguntas_checklist')
+        .getFullList<Question>({ sort: 'ordem' })
+      setQuestions(records)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoadingQuestions(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchQuestions()
   }, [])
+
+  useRealtime('perguntas_checklist', () => {
+    fetchQuestions()
+  })
 
   const setAnswer = (questionId: string, answer: AnswerValue) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }))

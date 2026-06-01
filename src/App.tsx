@@ -23,6 +23,9 @@ import LeadDetail from './pages/crm/LeadDetail'
 import MeusLeads from './pages/crm/MeusLeads'
 import Propostas from './pages/crm/Propostas'
 import AccessDenied from './pages/crm/AccessDenied'
+import ChecklistManagement from './pages/crm/gestao/ChecklistManagement'
+import SettingsManagement from './pages/crm/gestao/SettingsManagement'
+import { ConfigProvider } from './hooks/use-configuracoes'
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -30,33 +33,37 @@ const App = () => (
       <TooltipProvider>
         <ChecklistProvider>
           <CartProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route element={<Layout />}>
-                <Route path="/" element={<Index />} />
-                <Route path="/identificacao" element={<LeadCapture />} />
-                <Route path="/checklist" element={<Checklist />} />
-                <Route path="/resultado" element={<Result />} />
-                <Route path="/servicos" element={<ServiceCatalog />} />
-                <Route path="/carrinho" element={<Cart />} />
-                <Route path="/proposta" element={<ProposalSummary />} />
-              </Route>
+            <ConfigProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/identificacao" element={<LeadCapture />} />
+                  <Route path="/checklist" element={<Checklist />} />
+                  <Route path="/resultado" element={<Result />} />
+                  <Route path="/servicos" element={<ServiceCatalog />} />
+                  <Route path="/carrinho" element={<Cart />} />
+                  <Route path="/proposta" element={<ProposalSummary />} />
+                </Route>
 
-              {/* CRM Routes */}
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/vendedor/login" element={<VendedorLogin />} />
-              <Route path="/crm/acesso-negado" element={<AccessDenied />} />
-              <Route path="/crm" element={<CrmLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="leads" element={<MeusLeads />} />
-                <Route path="leads/:id" element={<LeadDetail />} />
-                <Route path="propostas" element={<Propostas />} />
-                <Route path="servicos" element={<AdminServices />} />
-              </Route>
+                {/* CRM Routes */}
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/vendedor/login" element={<VendedorLogin />} />
+                <Route path="/crm/acesso-negado" element={<AccessDenied />} />
+                <Route path="/crm" element={<CrmLayout />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="leads" element={<MeusLeads />} />
+                  <Route path="leads/:id" element={<LeadDetail />} />
+                  <Route path="propostas" element={<Propostas />} />
+                  <Route path="servicos" element={<AdminServices />} />
+                  <Route path="gestao/checklist" element={<ChecklistManagement />} />
+                  <Route path="gestao/configuracoes" element={<SettingsManagement />} />
+                </Route>
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ConfigProvider>
           </CartProvider>
         </ChecklistProvider>
       </TooltipProvider>

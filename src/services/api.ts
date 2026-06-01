@@ -4,6 +4,10 @@ export const getPerguntas = async () => {
   return pb.collection('perguntas_formulario').getFullList({ sort: 'ordem' })
 }
 
+export const getPerguntasChecklist = async () => {
+  return pb.collection('perguntas_checklist').getFullList({ sort: 'ordem' })
+}
+
 export const createLead = async (data: any) => {
   return pb.collection('leads').create(data)
 }

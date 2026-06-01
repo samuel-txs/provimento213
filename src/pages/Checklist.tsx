@@ -16,10 +16,12 @@ import {
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import logoImg from '@/assets/logo-fundopreto-ti-express-tagline-5e290.png'
+import { useConfiguracoes } from '@/hooks/use-configuracoes'
 
 export default function Checklist() {
   const navigate = useNavigate()
   const { answers, setAnswer, questions, loadingQuestions } = useChecklist()
+  const { configs } = useConfiguracoes()
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0)
 
   useEffect(() => {
@@ -69,7 +71,15 @@ export default function Checklist() {
       <div className="container max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <div className="inline-flex flex-col items-center justify-center bg-black p-4 rounded-xl shadow-lg">
-            <img src={logoImg} alt="Provimento 213 TXS" className="h-8 md:h-10 object-contain" />
+            {configs['logo_url'] ? (
+              <img
+                src={configs['logo_url']}
+                alt={configs['nome_empresa'] || 'Logo'}
+                className="h-8 md:h-10 object-contain"
+              />
+            ) : (
+              <img src={logoImg} alt="Provimento 213 TXS" className="h-8 md:h-10 object-contain" />
+            )}
           </div>
         </div>
 

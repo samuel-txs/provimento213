@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import heroImg from '@/assets/hero-7d34f.png'
 import { Card, CardContent } from '@/components/ui/card'
+import { useConfiguracoes } from '@/hooks/use-configuracoes'
 import {
   ShieldAlert,
   Server,
@@ -13,6 +14,13 @@ import {
 } from 'lucide-react'
 
 export default function Index() {
+  const { configs } = useConfiguracoes()
+  const msgBoasVindas =
+    configs['mensagem_boas_vindas'] || 'Sua serventia em conformidade com o Provimento 213 do CNJ.'
+  const nomeEmpresa = configs['nome_empresa'] || 'Tiexpress Soluções'
+  const telefoneContato = configs['telefone'] || '5562984778861'
+  const whatsappUrl = `https://wa.me/${telefoneContato.replace(/\D/g, '')}`
+
   return (
     <div className="flex flex-col animate-fade-in">
       {/* Hero Section */}
@@ -26,14 +34,14 @@ export default function Index() {
             Prazo de adequação em vigor
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight mb-6">
-            Sua serventia em conformidade com o{' '}
-            <span className="text-primary">Provimento 213 do CNJ.</span>
+          <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight mb-6 whitespace-pre-wrap">
+            {msgBoasVindas}
           </h1>
 
           <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Realize agora um diagnóstico gratuito da sua infraestrutura de TI e evite sanções.
-            Rapidez, segurança e adequação total às normas do Conselho Nacional de Justiça.
+            Realize agora um diagnóstico gratuito da sua infraestrutura de TI com a {nomeEmpresa} e
+            evite sanções. Rapidez, segurança e adequação total às normas do Conselho Nacional de
+            Justiça.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -53,7 +61,7 @@ export default function Index() {
               asChild
               className="w-full sm:w-auto text-base rounded-full px-8 h-14 bg-white hover:bg-slate-50"
             >
-              <a href="https://wa.me/5562984778861" target="_blank" rel="noopener noreferrer">
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
                 Falar com Especialista
               </a>
             </Button>

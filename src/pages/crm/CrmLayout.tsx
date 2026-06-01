@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
-import { LogOut, LayoutDashboard, Users, FileText, Settings } from 'lucide-react'
+import { LogOut, LayoutDashboard, Users, FileText, Settings, ListChecks } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import logoImg from '@/assets/logo-fundopreto-ti-express-tagline-5e290.png'
 
@@ -17,9 +17,11 @@ export default function CrmLayout() {
         navigate('/vendedor/login')
       } else if (user?.role !== 'admin' && user?.role !== 'vendedor') {
         navigate('/crm/acesso-negado')
+      } else if (location.pathname.startsWith('/crm/gestao') && user?.role !== 'admin') {
+        navigate('/crm/acesso-negado')
       }
     }
-  }, [isAuthenticated, loading, navigate, user])
+  }, [isAuthenticated, loading, navigate, user, location.pathname])
 
   // Session Timeout: 30 minutes
   useEffect(() => {
@@ -89,13 +91,33 @@ export default function CrmLayout() {
             Minhas Propostas
           </Link>
           {user?.role === 'admin' && (
-            <Link
-              to="/crm/servicos"
-              className={`flex items-center gap-3 px-3 py-2 rounded-md font-medium transition-colors ${location.pathname === '/crm/servicos' ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-            >
-              <Settings className="h-4 w-4" />
-              Serviços e Preços
-            </Link>
+            <>
+              <Link
+                to="/crm/servicos"
+                className={`flex items-center gap-3 px-3 py-2 rounded-md font-medium transition-colors ${location.pathname === '/crm/servicos' ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+              >
+                <Settings className="h-4 w-4" />
+                Serviços e Preços
+              </Link>
+
+              <div className="px-3 pt-6 pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Gestão
+              </div>
+              <Link
+                to="/crm/gestao/checklist"
+                className={`flex items-center gap-3 px-3 py-2 rounded-md font-medium transition-colors ${location.pathname.startsWith('/crm/gestao/checklist') ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+              >
+                <ListChecks className="h-4 w-4" />
+                Checklist
+              </Link>
+              <Link
+                to="/crm/gestao/configuracoes"
+                className={`flex items-center gap-3 px-3 py-2 rounded-md font-medium transition-colors ${location.pathname.startsWith('/crm/gestao/configuracoes') ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+              >
+                <Settings className="h-4 w-4" />
+                Configurações
+              </Link>
+            </>
           )}
         </nav>
         <div className="p-4 border-t border-slate-800">

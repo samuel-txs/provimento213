@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-01T14:01:50.371Z",
+  "generatedAt": "2026-06-01T14:38:55.689Z",
   "collections": [
     {
       "name": "users",
@@ -752,6 +752,92 @@
         }
       ],
       "indexes": ["CREATE INDEX `idx_diagnosticos_lead` ON `diagnosticos_historico` (lead_id)"]
+    },
+    {
+      "name": "perguntas_checklist",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "@request.auth.role = 'admin'",
+        "update": "@request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "categoria",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "texto_pergunta",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "ordem",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "configuracoes_plataforma",
+      "type": "base",
+      "apiRules": {
+        "list": "",
+        "view": "",
+        "create": "@request.auth.role = 'admin'",
+        "update": "@request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "chave",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "valor",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_config_chave ON configuracoes_plataforma (chave)"]
     }
   ]
 }
