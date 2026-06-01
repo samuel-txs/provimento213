@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useChecklist } from '@/hooks/use-checklist'
 import { Navigate, Link } from 'react-router-dom'
 import { GaugeChart } from '@/components/GaugeChart'
@@ -10,7 +10,18 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion'
-import { QUESTIONS, CATEGORIES } from '@/lib/questions'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { QUESTIONS } from '@/lib/questions'
 import { Badge } from '@/components/ui/badge'
 import {
   CheckCircle2,
@@ -20,21 +31,60 @@ import {
   FileText,
   ArrowLeft,
   Send,
+  Building2,
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { upsertLeadByEmail } from '@/services/api'
 
 export default function Result() {
   const { leadData, score, answers, reset, questions } = useChecklist()
+  const [leadId, setLeadId] = useState<string | null>(null)
 
-  // Simulate API Call for persistence
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [formData, setFormData] = useState({
+    nome: '',
+    email: '',
+    telefone: '',
+    cartorio: '',
+    cnpj: '',
+  })
+  const [authorized, setAuthorized] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // API Call for persistence
   useEffect(() => {
     if (!leadData) return
-    console.log('Mock: Saving lead and score to DB...', { leadData, score, answers })
-    toast({
-      title: 'Diagnóstico Concluído!',
-      description: 'Seus resultados foram gerados com sucesso.',
-    })
-  }, [leadData, score, answers])
+
+    const saveLead = async () => {
+      try {
+        const record = await upsertLeadByEmail({
+          nome: leadData.nome,
+          email: leadData.email,
+          telefone: leadData.telefone,
+          cartorio: leadData.cartorio,
+          cnpj: leadData.cnpj,
+          score: score,
+        })
+        setLeadId(record.id)
+        setFormData({
+          nome: record.nome || leadData.nome || '',
+          email: record.email || leadData.email || '',
+          telefone: record.telefone || leadData.telefone || '',
+          cartorio: record.cartorio || leadData.cartorio || '',
+          cnpj: record.cnpj || leadData.cnpj || '',
+        })
+        toast({
+          title: 'Diagnóstico Concluído!',
+          description: 'Seus resultados foram gerados e salvos com sucesso.',
+        })
+      } catch (error) {
+        console.error('Error saving lead:', error)
+      }
+    }
+
+    saveLead()
+  }, [leadData, score])
 
   if (!leadData) {
     return <Navigate to="/" replace />
@@ -87,28 +137,92 @@ export default function Result() {
     items: itemsToImprove.filter((i) => i.categoria === cat),
   }))
 
-  const handleDownloadMock = () => {
-    toast({
-      title: 'Gerando PDF...',
-      description: 'O download iniciará em instantes. (Funcionalidade simulada)',
-    })
+  const handleDownloadClick = () => {
+    setIsModalOpen(true)
   }
 
+  const handleModalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!authorized) {
+      toast({
+        title: 'Autorização necessária',
+        description: 'Por favor, marque a caixa de autorização para continuar.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      await upsertLeadByEmail({
+        ...formData,
+        score,
+        notas: 'Lead autorizou contato ao baixar PDF.',
+      })
+      setIsModalOpen(false)
+
+      // Give time for modal to close before printing
+      setTimeout(() => {
+        const originalTitle = document.title
+        document.title = `Relatorio_Conformidade_Provimento213_${formData.cartorio.replace(/[^a-zA-Z0-9]/g, '_')}`
+        window.print()
+        // Restore title after print dialog closes
+        setTimeout(() => {
+          document.title = originalTitle
+        }, 1000)
+      }, 500)
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Houve um problema ao processar sua requisição.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const printDate = new Date().toLocaleDateString('pt-BR')
+
   return (
-    <div className="flex-1 bg-muted/20 py-12 px-4 animate-fade-in">
-      <div className="container max-w-4xl mx-auto space-y-8">
-        {/* Header Results */}
-        <div className="text-center space-y-2 animate-slide-down">
+    <div className="flex-1 bg-muted/20 py-12 px-4 animate-fade-in print:bg-white print:py-0">
+      <div className="container max-w-4xl mx-auto space-y-8 print:space-y-6">
+        {/* PDF Header - Only visible when printing */}
+        <div className="hidden print:flex flex-col items-center justify-center border-b pb-6 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-primary p-2 rounded-lg">
+              <Building2 className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Tiexpress</h1>
+          </div>
+          <h2 className="text-xl font-bold text-slate-800">
+            Relatório de Conformidade - Provimento 213 CNJ
+          </h2>
+          <div className="flex flex-col items-center mt-4 text-sm text-slate-600">
+            <p>
+              <strong>Cartório:</strong> {formData.cartorio || leadData.cartorio}
+            </p>
+            <p>
+              <strong>CNPJ:</strong> {formData.cnpj || leadData.cnpj}
+            </p>
+            <p>
+              <strong>Data de Emissão:</strong> {printDate}
+            </p>
+          </div>
+        </div>
+
+        {/* Header Results (Screen) */}
+        <div className="text-center space-y-2 animate-slide-down print:hidden">
           <h1 className="text-3xl font-bold text-slate-900">Relatório de Conformidade</h1>
           <p className="text-slate-500">
             Serventia: <span className="font-semibold text-slate-700">{leadData.cartorio}</span>
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 print:grid-cols-1 print:gap-4">
           {/* Score Card */}
-          <Card className="border-none shadow-elevation animate-slide-up overflow-hidden">
-            <CardHeader className="bg-slate-50 border-b pb-4">
+          <Card className="border-none shadow-elevation animate-slide-up overflow-hidden print:shadow-none print:border print:break-inside-avoid">
+            <CardHeader className="bg-slate-50 border-b pb-4 print:bg-transparent">
               <CardTitle className="text-center">Índice de Adequação</CardTitle>
             </CardHeader>
             <CardContent className="pt-6 pb-8 flex flex-col items-center">
@@ -127,9 +241,9 @@ export default function Result() {
             </CardContent>
           </Card>
 
-          {/* Action Card */}
+          {/* Action Card (Screen only) */}
           <Card
-            className="border-none shadow-elevation animate-slide-up"
+            className="border-none shadow-elevation animate-slide-up print:hidden"
             style={{ animationDelay: '0.1s' }}
           >
             <CardHeader>
@@ -139,9 +253,9 @@ export default function Result() {
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <Button
-                  onClick={() => window.print()}
+                  onClick={handleDownloadClick}
                   variant="outline"
-                  className="w-full h-14 justify-start text-left px-6 text-base print:hidden"
+                  className="w-full h-14 justify-start text-left px-6 text-base"
                 >
                   <Download className="mr-4 h-5 w-5 text-primary" />
                   <div>
@@ -152,12 +266,21 @@ export default function Result() {
                   </div>
                 </Button>
 
-                <Button className="w-full h-14 justify-start text-left px-6 text-base bg-emerald-600 hover:bg-emerald-700 text-white print:hidden">
-                  <Send className="mr-4 h-5 w-5" />
-                  <div>
-                    <div className="font-semibold">Falar com Especialista</div>
-                    <div className="text-xs opacity-90 font-normal">Tire dúvidas no WhatsApp</div>
-                  </div>
+                <Button
+                  className="w-full h-14 justify-start text-left px-6 text-base bg-emerald-600 hover:bg-emerald-700 text-white"
+                  asChild
+                >
+                  <a
+                    href={`https://wa.me/5562984778861?text=Olá,%20acabei%20de%20fazer%20o%20diagnóstico%20do%20Provimento%20213%20e%20meu%20score%20foi%20${score}%25.%20Gostaria%20de%20ajuda.`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Send className="mr-4 h-5 w-5" />
+                    <div>
+                      <div className="font-semibold">Falar com Especialista</div>
+                      <div className="text-xs opacity-90 font-normal">Tire dúvidas no WhatsApp</div>
+                    </div>
+                  </a>
                 </Button>
               </div>
 
@@ -173,15 +296,15 @@ export default function Result() {
         </div>
 
         {/* Advanced EOL Matrix (Printable) */}
-        <Card className="border-none shadow-elevation mt-8 animate-slide-up bg-white print:block">
-          <CardHeader className="bg-slate-50 border-b print:bg-transparent">
+        <Card className="border-none shadow-elevation mt-8 animate-slide-up bg-white print:shadow-none print:border print:mt-4 print:break-inside-avoid">
+          <CardHeader className="bg-slate-50 border-b print:bg-transparent print:py-3">
             <CardTitle>Matriz EOL & Adequação</CardTitle>
-            <CardDescription>
+            <CardDescription className="print:hidden">
               Resumo da infraestrutura de Hardware e Software baseada nas respostas do diagnóstico.
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
-            <div className="grid md:grid-cols-2 gap-8">
+          <CardContent className="pt-6 print:pt-4">
+            <div className="grid md:grid-cols-2 gap-8 print:gap-4">
               <div>
                 <h4 className="font-semibold text-slate-800 mb-3 border-b pb-2">
                   Hardware / Infraestrutura
@@ -219,9 +342,7 @@ export default function Result() {
                 <ul className="space-y-2 text-sm">
                   {answers['q_software_eol'] === 'nao' ? (
                     <li className="flex justify-between items-center">
-                      <span className="text-slate-600">
-                        Sistemas Operacionais (Ex: Win Server 2012)
-                      </span>{' '}
+                      <span className="text-slate-600">Sistemas Operacionais</span>{' '}
                       <Badge variant="destructive">Substituir</Badge>
                     </li>
                   ) : (
@@ -246,39 +367,39 @@ export default function Result() {
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t">
-              <h4 className="font-semibold text-slate-800 mb-4">Timeline Recomendada</h4>
-              <div className="flex flex-col md:flex-row gap-4 justify-between relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 md:before:translate-y-6 before:h-full md:before:h-0.5 md:before:w-full before:w-0.5 before:bg-slate-200">
+            <div className="mt-8 pt-6 border-t print:mt-4 print:pt-4">
+              <h4 className="font-semibold text-slate-800 mb-4 print:mb-2">Timeline Recomendada</h4>
+              <div className="flex flex-col md:flex-row gap-4 justify-between relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 md:before:translate-y-6 before:h-full md:before:h-0.5 md:before:w-full before:w-0.5 before:bg-slate-200 print:before:hidden">
                 <div className="relative z-10 flex flex-row md:flex-col items-center gap-4 text-center">
-                  <div className="h-10 w-10 rounded-full bg-red-100 text-red-600 font-bold flex items-center justify-center shrink-0 border-2 border-white shadow">
+                  <div className="h-10 w-10 rounded-full bg-red-100 text-red-600 font-bold flex items-center justify-center shrink-0 border-2 border-white shadow print:border-red-600">
                     1
                   </div>
                   <div className="text-left md:text-center">
                     <h5 className="font-semibold text-slate-800">Urgente (Imediato)</h5>
-                    <p className="text-xs text-slate-500 max-w-[150px]">
-                      Ativos Críticos EOL (Sem suporte)
+                    <p className="text-xs text-slate-500 max-w-[150px] print:max-w-none">
+                      Ativos Críticos EOL
                     </p>
                   </div>
                 </div>
                 <div className="relative z-10 flex flex-row md:flex-col items-center gap-4 text-center">
-                  <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-600 font-bold flex items-center justify-center shrink-0 border-2 border-white shadow">
+                  <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-600 font-bold flex items-center justify-center shrink-0 border-2 border-white shadow print:border-amber-600">
                     2
                   </div>
                   <div className="text-left md:text-center">
                     <h5 className="font-semibold text-slate-800">Curto Prazo (30d)</h5>
-                    <p className="text-xs text-slate-500 max-w-[150px]">
+                    <p className="text-xs text-slate-500 max-w-[150px] print:max-w-none">
                       Políticas, Backup e Antivírus
                     </p>
                   </div>
                 </div>
                 <div className="relative z-10 flex flex-row md:flex-col items-center gap-4 text-center">
-                  <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-600 font-bold flex items-center justify-center shrink-0 border-2 border-white shadow">
+                  <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-600 font-bold flex items-center justify-center shrink-0 border-2 border-white shadow print:border-blue-600">
                     3
                   </div>
                   <div className="text-left md:text-center">
                     <h5 className="font-semibold text-slate-800">Médio Prazo (90d)</h5>
-                    <p className="text-xs text-slate-500 max-w-[150px]">
-                      Renovação de Licenças e Treinamento
+                    <p className="text-xs text-slate-500 max-w-[150px] print:max-w-none">
+                      Renovação de Licenças
                     </p>
                   </div>
                 </div>
@@ -290,25 +411,26 @@ export default function Result() {
         {/* Detailed Breakdown */}
         {itemsToImprove.length > 0 ? (
           <Card
-            className="border-none shadow-elevation mt-8 animate-slide-up print:block"
+            className="border-none shadow-elevation mt-8 animate-slide-up print:shadow-none print:border print:mt-4"
             style={{ animationDelay: '0.2s' }}
           >
-            <CardHeader className="bg-slate-50 border-b">
+            <CardHeader className="bg-slate-50 border-b print:bg-transparent print:py-3">
               <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
+                <FileText className="h-5 w-5 text-primary print:hidden" />
                 <CardTitle>Plano de Ação Sugerido</CardTitle>
               </div>
-              <CardDescription>
+              <CardDescription className="print:hidden">
                 Baseado nas suas respostas, aqui estão as recomendações para atingir a conformidade
                 total.
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-6">
-              <Accordion type="multiple" className="w-full space-y-4">
+            <CardContent className="pt-6 print:pt-4">
+              {/* Screen Version (Accordion) */}
+              <Accordion type="multiple" className="w-full space-y-4 print:hidden">
                 {groupedItems.map((group, idx) => (
                   <AccordionItem
                     value={`item-${idx}`}
-                    key={group.id}
+                    key={idx}
                     className="border rounded-lg px-4 bg-white"
                   >
                     <AccordionTrigger className="hover:no-underline py-4">
@@ -322,7 +444,6 @@ export default function Result() {
                     <AccordionContent className="pt-2 pb-6 space-y-6">
                       {group.items.map((item) => (
                         <div key={item.id} className="pl-11 relative">
-                          {/* Timeline dot */}
                           <div className="absolute left-4 top-2 h-2 w-2 rounded-full bg-accent" />
                           <div className="absolute left-[19px] top-4 bottom-[-16px] w-px bg-border last:hidden" />
 
@@ -330,16 +451,18 @@ export default function Result() {
                             <span className="text-sm font-medium text-slate-500 block mb-1">
                               Requisito:
                             </span>
-                            <p className="text-slate-800">{item.texto_pergunta}</p>
+                            <p className="text-slate-800">
+                              {item.texto_pergunta || QUESTIONS.find((q) => q.id === item.id)?.text}
+                            </p>
                           </div>
                           <div className="bg-slate-50 p-4 rounded-md border-l-4 border-l-primary mt-2">
                             <span className="text-sm font-semibold text-primary block mb-1">
                               Recomendação:
                             </span>
                             <p className="text-sm text-slate-700">
-                              Verifique esta exigência e implemente as medidas necessárias para
-                              garantir a conformidade técnica, entrando em contato com especialistas
-                              se necessário.
+                              {item.recomendacao ||
+                                QUESTIONS.find((q) => q.id === item.id)?.recommendation ||
+                                'Verifique esta exigência e implemente as medidas necessárias para garantir a conformidade técnica, entrando em contato com especialistas se necessário.'}
                             </p>
                           </div>
                         </div>
@@ -348,13 +471,53 @@ export default function Result() {
                   </AccordionItem>
                 ))}
               </Accordion>
+
+              {/* Print Version (Expanded) */}
+              <div className="hidden print:block w-full space-y-6">
+                {groupedItems.map((group, idx) => (
+                  <div key={idx} className="bg-white">
+                    <div className="py-2 border-b-2 border-slate-800 mb-4">
+                      <div className="flex items-center gap-3 text-left">
+                        <div className="font-bold h-8 w-8 flex items-center justify-center text-sm shrink-0 border border-primary text-primary rounded-full">
+                          {group.items.length}
+                        </div>
+                        <span className="font-semibold text-slate-800 text-lg">{group.title}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-6">
+                      {group.items.map((item) => (
+                        <div key={item.id} className="pl-4 mb-4 break-inside-avoid">
+                          <div className="mb-2">
+                            <span className="text-sm font-medium text-slate-500 block mb-1">
+                              Requisito:
+                            </span>
+                            <p className="text-slate-800 font-medium">
+                              {item.texto_pergunta || QUESTIONS.find((q) => q.id === item.id)?.text}
+                            </p>
+                          </div>
+                          <div className="p-4 rounded-md border border-slate-300 mt-2">
+                            <span className="text-sm font-semibold text-primary block mb-1">
+                              Recomendação:
+                            </span>
+                            <p className="text-sm text-slate-700">
+                              {item.recomendacao ||
+                                QUESTIONS.find((q) => q.id === item.id)?.recommendation ||
+                                'Verifique esta exigência e implemente as medidas necessárias para garantir a conformidade técnica, entrando em contato com especialistas se necessário.'}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-none shadow-elevation bg-secondary/10 border border-secondary/20 mt-8 animate-slide-up">
+          <Card className="border-none shadow-elevation bg-secondary/10 border border-secondary/20 mt-8 animate-slide-up print:bg-transparent print:border-secondary">
             <CardContent className="pt-6 pb-6 flex flex-col items-center text-center">
-              <div className="bg-secondary p-3 rounded-full mb-4">
-                <CheckCircle2 className="h-8 w-8 text-white" />
+              <div className="bg-secondary p-3 rounded-full mb-4 print:border print:border-secondary print:bg-transparent print:text-secondary">
+                <CheckCircle2 className="h-8 w-8 text-white print:text-secondary" />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-2">Parabéns!</h3>
               <p className="text-slate-700 max-w-lg">
@@ -370,14 +533,113 @@ export default function Result() {
             variant="ghost"
             asChild
             onClick={reset}
-            className="text-slate-500 hover:text-slate-800 print:hidden"
+            className="text-slate-500 hover:text-slate-800"
           >
             <Link to="/">
               <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao Início
             </Link>
           </Button>
         </div>
+
+        {/* PDF Footer - Only visible when printing */}
+        <div className="hidden print:block mt-12 pt-6 border-t text-center text-sm text-slate-500">
+          <p className="font-semibold text-slate-700">Tiexpress Soluções em TI</p>
+          <p>Especialistas em adequação ao Provimento 213 CNJ</p>
+          <p>Contato: (62) 98477-8861 | www.tiexpress.tec.br</p>
+        </div>
       </div>
+
+      {/* Modal / Dialog for Contact Authorization */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <form onSubmit={handleModalSubmit}>
+            <DialogHeader>
+              <DialogTitle>Baixar Relatório em PDF</DialogTitle>
+              <DialogDescription>
+                Confirme seus dados para gerar o relatório profissional da sua serventia.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="nome">Nome Completo</Label>
+                <Input
+                  id="nome"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="email">E-mail Corporativo</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="telefone">WhatsApp / Telefone</Label>
+                  <Input
+                    id="telefone"
+                    value={formData.telefone}
+                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="cnpj">CNPJ da Serventia</Label>
+                  <Input
+                    id="cnpj"
+                    value={formData.cnpj}
+                    onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="cartorio">Nome da Serventia</Label>
+                <Input
+                  id="cartorio"
+                  value={formData.cartorio}
+                  onChange={(e) => setFormData({ ...formData, cartorio: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="flex items-start space-x-3 mt-4 bg-muted/50 p-3 rounded-lg border">
+                <Checkbox
+                  id="authorized"
+                  checked={authorized}
+                  onCheckedChange={(checked) => setAuthorized(checked as boolean)}
+                  className="mt-1"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <Label
+                    htmlFor="authorized"
+                    className="text-sm font-medium leading-tight cursor-pointer"
+                  >
+                    Autorizo a Tiexpress Soluções a entrar em contato para apresentar soluções de
+                    conformidade ao Provimento 213.
+                  </Label>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting || !authorized}>
+                {isSubmitting ? 'Gerando...' : 'Confirmar e Baixar PDF'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

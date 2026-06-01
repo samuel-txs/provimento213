@@ -8,6 +8,14 @@ export const createLead = async (data: any) => {
   return pb.collection('leads').create(data)
 }
 
+export const upsertLead = async (data: any) => {
+  return pb.send('/backend/v1/leads/upsert', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
 export const updateLeadStatus = async (id: string, status: string, notas: string) => {
   return pb.collection('leads').update(id, { status, notas })
 }
