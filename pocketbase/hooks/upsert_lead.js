@@ -30,6 +30,17 @@ routerAdd('POST', '/backend/v1/leads/upsert', (e) => {
     }
 
     $app.save(record)
+
+    if (body.respostas_json) {
+      const histCol = $app.findCollectionByNameOrId('diagnosticos_historico')
+      const histRec = new Record(histCol)
+      histRec.set('lead_id', record.id)
+      histRec.set('score_total', body.score !== undefined ? body.score : record.get('score'))
+      histRec.set('data_diagnostico', new Date().toISOString())
+      histRec.set('respostas_json', body.respostas_json)
+      $app.save(histRec)
+    }
+
     return e.json(200, record)
   } else {
     const collection = $app.findCollectionByNameOrId('leads')
@@ -47,6 +58,17 @@ routerAdd('POST', '/backend/v1/leads/upsert', (e) => {
     }
 
     $app.save(record)
+
+    if (body.respostas_json) {
+      const histCol = $app.findCollectionByNameOrId('diagnosticos_historico')
+      const histRec = new Record(histCol)
+      histRec.set('lead_id', record.id)
+      histRec.set('score_total', body.score !== undefined ? body.score : record.get('score'))
+      histRec.set('data_diagnostico', new Date().toISOString())
+      histRec.set('respostas_json', body.respostas_json)
+      $app.save(histRec)
+    }
+
     return e.json(200, record)
   }
 })

@@ -14,6 +14,7 @@ import Result from './pages/Result'
 import ServiceCatalog from './pages/ServiceCatalog'
 import Cart from './pages/Cart'
 import ProposalSummary from './pages/ProposalSummary'
+import AdminDashboard from './pages/admin/AdminDashboard'
 import CrmLayout from './pages/crm/CrmLayout'
 import AdminServices from './pages/crm/AdminServices'
 import Dashboard from './pages/crm/Dashboard'
@@ -43,6 +44,7 @@ const App = () => (
               </Route>
 
               {/* CRM Routes */}
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/vendedor/login" element={<VendedorLogin />} />
               <Route path="/crm/acesso-negado" element={<AccessDenied />} />
               <Route path="/crm" element={<CrmLayout />}>

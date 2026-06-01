@@ -15,6 +15,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from 'recharts'
+import { getDiagnosticosHistorico } from '@/services/api'
+import { QUESTIONS } from '@/lib/questions'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -49,8 +60,11 @@ export default function LeadDetail() {
   const [checklist, setChecklist] = useState<any[]>([])
   const [documentos, setDocumentos] = useState<any[]>([])
   const [notas, setNotas] = useState<any[]>([])
+  const [historico, setHistorico] = useState<any[]>([])
   const [novaNota, setNovaNota] = useState('')
   const [loading, setLoading] = useState(true)
+  const [compareIdx1, setCompareIdx1] = useState<string>('')
+  const [compareIdx2, setCompareIdx2] = useState<string>('')
   const { user } = useAuth()
 
   // New task state
@@ -64,16 +78,18 @@ export default function LeadDetail() {
   const fetchData = async () => {
     if (!id) return
     try {
-      const [leadData, tasksData, docsData, notasData] = await Promise.all([
+      const [leadData, tasksData, docsData, notasData, histData] = await Promise.all([
         getLeadById(id),
         getChecklistTarefas(id),
         getDocumentos(id),
         getNotas(id),
+        getDiagnosticosHistorico(id),
       ])
       setLead(leadData)
       setChecklist(tasksData)
       setDocumentos(docsData)
       setNotas(notasData)
+      setHistorico(histData)
     } catch (err) {
       toast({ title: 'Erro ao carregar dados', variant: 'destructive' })
     } finally {
@@ -191,6 +207,13 @@ export default function LeadDetail() {
 
   const getFileUrl = (doc: any) => {
     return `${pb.baseUrl}/api/files/documentos_cartorio/${doc.id}/${doc.arquivo}`
+  }
+
+  const getComplianceLevel = (score: number) => {
+    if (score >= 91) return { label: 'Excelente', color: 'bg-emerald-500/20 text-emerald-400' }
+    if (score >= 71) return { label: 'Adequado', color: 'bg-blue-500/20 text-blue-400' }
+    if (score >= 41) return { label: 'Atenção', color: 'bg-amber-500/20 text-amber-400' }
+    return { label: 'Crítico', color: 'bg-red-500/20 text-red-400' }
   }
 
   const EolMatrix = () => (
@@ -371,6 +394,12 @@ export default function LeadDetail() {
             className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400"
           >
             Documentos
+          </TabsTrigger>
+          <TabsTrigger
+            value="evolucao"
+            className="data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400"
+          >
+            Evolução
           </TabsTrigger>
         </TabsList>
 
@@ -597,6 +626,198 @@ export default function LeadDetail() {
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="evolucao" className="mt-4">
+          <Card className="bg-slate-900 border-slate-800 text-white">
+            <CardHeader>
+              <CardTitle>Histórico de Diagnósticos</CardTitle>
+              <CardDescription className="text-slate-400">
+                Acompanhe a evolução do score ao longo do tempo
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {historico.length > 0 ? (
+                <>
+                  <div className="h-[300px] w-full mb-8">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={historico.map((h) => ({
+                          date: format(new Date(h.data_diagnostico), 'dd/MM/yy'),
+                          score: h.score_total,
+                        }))}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                        <XAxis dataKey="date" stroke="#64748b" />
+                        <YAxis stroke="#64748b" domain={[0, 100]} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#0f172a',
+                            borderColor: '#1e293b',
+                            color: '#fff',
+                          }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="score"
+                          stroke="#3b82f6"
+                          strokeWidth={2}
+                          dot={{ r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="mt-8 border-t border-slate-800 pt-8">
+                    <h4 className="text-lg font-semibold mb-4 text-slate-200">
+                      Comparar Diagnósticos
+                    </h4>
+                    {historico.length >= 2 ? (
+                      <div className="space-y-4">
+                        <div className="flex gap-4">
+                          <Select value={compareIdx1} onValueChange={setCompareIdx1}>
+                            <SelectTrigger className="w-1/2 bg-slate-950 border-slate-700 text-white">
+                              <SelectValue placeholder="Selecione o Diagnóstico 1" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {historico.map((h, idx) => (
+                                <SelectItem key={h.id} value={idx.toString()}>
+                                  {format(new Date(h.data_diagnostico), 'dd/MM/yy HH:mm')} -{' '}
+                                  {h.score_total}%
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select value={compareIdx2} onValueChange={setCompareIdx2}>
+                            <SelectTrigger className="w-1/2 bg-slate-950 border-slate-700 text-white">
+                              <SelectValue placeholder="Selecione o Diagnóstico 2" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {historico.map((h, idx) => (
+                                <SelectItem key={h.id} value={idx.toString()}>
+                                  {format(new Date(h.data_diagnostico), 'dd/MM/yy HH:mm')} -{' '}
+                                  {h.score_total}%
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {compareIdx1 && compareIdx2 && (
+                          <div className="mt-4 bg-slate-950 rounded-lg border border-slate-800 overflow-hidden">
+                            <table className="w-full text-sm text-left">
+                              <thead className="bg-slate-900 border-b border-slate-800 text-slate-300">
+                                <tr>
+                                  <th className="p-3">Critério / Pergunta</th>
+                                  <th className="p-3">Diag 1</th>
+                                  <th className="p-3">Diag 2</th>
+                                  <th className="p-3 text-center">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-800/50">
+                                {QUESTIONS.map((q) => {
+                                  const r1 =
+                                    historico[parseInt(compareIdx1)]?.respostas_json?.[q.id]
+                                  const r2 =
+                                    historico[parseInt(compareIdx2)]?.respostas_json?.[q.id]
+                                  if (!r1 && !r2) return null
+
+                                  const getAnswerLabel = (v: string) =>
+                                    v === 'sim'
+                                      ? 'Sim'
+                                      : v === 'nao'
+                                        ? 'Não'
+                                        : v === 'parcial'
+                                          ? 'Parcial'
+                                          : 'Não sei'
+                                  const isBetter =
+                                    (r1 !== 'sim' && r2 === 'sim') ||
+                                    (r1 === 'nao' && r2 === 'parcial')
+                                  const isWorse =
+                                    (r1 === 'sim' && r2 !== 'sim') ||
+                                    (r1 === 'parcial' && r2 === 'nao')
+
+                                  return (
+                                    <tr key={q.id}>
+                                      <td
+                                        className="p-3 text-slate-300 max-w-[200px] truncate"
+                                        title={q.text}
+                                      >
+                                        {q.text}
+                                      </td>
+                                      <td className="p-3 text-slate-400">{getAnswerLabel(r1)}</td>
+                                      <td className="p-3 text-slate-400">{getAnswerLabel(r2)}</td>
+                                      <td className="p-3 text-center">
+                                        {isBetter ? (
+                                          <Badge className="bg-emerald-500/20 text-emerald-400">
+                                            Melhorou
+                                          </Badge>
+                                        ) : isWorse ? (
+                                          <Badge className="bg-red-500/20 text-red-400">
+                                            Piorou
+                                          </Badge>
+                                        ) : (
+                                          <span className="text-slate-600">-</span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500">
+                        São necessários pelo menos 2 diagnósticos para comparar.
+                      </p>
+                    )}
+                  </div>
+
+                  <h4 className="text-lg font-semibold mb-4 mt-8 text-slate-200">
+                    Registro de Avaliações
+                  </h4>
+                  <div className="space-y-4">
+                    {historico.map((h, i) => {
+                      const prev = i > 0 ? historico[i - 1] : null
+                      const diff = prev ? h.score_total - prev.score_total : 0
+                      return (
+                        <div
+                          key={h.id}
+                          className="flex items-center justify-between p-4 bg-slate-950 rounded-lg border border-slate-800"
+                        >
+                          <div>
+                            <p className="font-semibold text-slate-200">
+                              {format(new Date(h.data_diagnostico), 'dd/MM/yyyy HH:mm')}
+                            </p>
+                            <Badge className={`mt-1 ${getComplianceLevel(h.score_total).color}`}>
+                              {getComplianceLevel(h.score_total).label}
+                            </Badge>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold">{h.score_total}%</p>
+                            {prev && (
+                              <p
+                                className={`text-sm ${diff >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
+                              >
+                                {diff >= 0 ? '+' : ''}
+                                {diff}% vs anterior
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-slate-500 py-8 text-center">
+                  Nenhum histórico de diagnóstico encontrado.
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { ShieldCheck, ArrowRight, Loader2 } from 'lucide-react'
-import { createLead, createResposta, createScore } from '@/services/api'
+import { upsertLead, createResposta, createScore } from '@/services/api'
 import { toast } from '@/hooks/use-toast'
 import { getErrorMessage } from '@/lib/pocketbase/errors'
 
@@ -63,7 +63,10 @@ export default function LeadCapture() {
         score: Number(score) || 0,
       }
 
-      const lead = await createLead(leadPayload)
+      const lead = await upsertLead({
+        ...leadPayload,
+        respostas_json: answers,
+      })
 
       // Save answers
       const resPromises = Object.entries(answers).map(([qId, answer]) => {

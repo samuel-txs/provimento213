@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-01T13:34:28.895Z",
+  "generatedAt": "2026-06-01T14:01:50.371Z",
   "collections": [
     {
       "name": "users",
@@ -699,6 +699,59 @@
         }
       ],
       "indexes": []
+    },
+    {
+      "name": "diagnosticos_historico",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin' || @request.auth.role = 'vendedor'",
+        "view": "@request.auth.role = 'admin' || @request.auth.role = 'vendedor'",
+        "create": "",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "lead_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "leads"
+        },
+        {
+          "name": "score_total",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "data_diagnostico",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "respostas_json",
+          "type": "json",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX `idx_diagnosticos_lead` ON `diagnosticos_historico` (lead_id)"]
     }
   ]
 }

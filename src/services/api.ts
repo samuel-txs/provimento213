@@ -99,3 +99,25 @@ export const createResposta = async (data: any) => {
 export const createScore = async (data: any) => {
   return pb.collection('scores_resultado').create(data)
 }
+
+export const sendResultEmail = async (data: { to: string; subject: string; html: string }) => {
+  return pb.send('/backend/v1/send-email', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+export const sendEmailPdf = async (data: any) => {
+  return pb.send('/backend/v1/send-email-pdf', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+export const getDiagnosticosHistorico = async (leadId: string) => {
+  return pb
+    .collection('diagnosticos_historico')
+    .getFullList({ filter: `lead_id = "${leadId}"`, sort: 'created' })
+}

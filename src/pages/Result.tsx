@@ -34,7 +34,7 @@ import {
   Building2,
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
-import { upsertLead } from '@/services/api'
+import { upsertLead, sendEmailPdf } from '@/services/api'
 
 export default function Result() {
   const { leadData, score, answers, reset, questions } = useChecklist()
@@ -159,6 +159,77 @@ export default function Result() {
         score,
         notas: 'Lead autorizou contato ao baixar PDF.',
       })
+
+      const htmlContent = `
+        <div style="font-family: sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://img.usecurling.com/i?q=building&shape=solid-black&color=blue" alt="Tiexpress Logo" style="width: 64px; height: 64px; margin-bottom: 10px;" />
+            <h1 style="color: #1e293b; margin: 0;">Relatório de Conformidade</h1>
+            <h2 style="color: #475569; margin: 5px 0;">Provimento 213 CNJ</h2>
+          </div>
+          <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+            <h3 style="margin: 0; color: #64748b; font-size: 16px;">Seu Score de Adequação:</h3>
+            <p style="font-size: 36px; font-weight: bold; color: ${
+              score >= 71 ? '#059669' : score >= 41 ? '#d97706' : '#dc2626'
+            }; margin: 10px 0;">${score}%</p>
+          </div>
+          <div>
+            <h3 style="color: #334155; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 15px;">Principais Recomendações:</h3>
+            <ul style="padding-left: 20px; color: #475569; margin: 0; line-height: 1.6;">
+              ${
+                itemsToImprove.length > 0
+                  ? itemsToImprove
+                      .slice(0, 5)
+                      .map(
+                        (item) => `
+                      <li style="margin-bottom: 12px;">
+                        <strong>${item.categoria}:</strong> ${item.recomendacao || QUESTIONS.find((q) => q.id === item.id)?.recommendation || 'Verifique esta exigência e implemente as medidas necessárias.'}
+                      </li>
+                    `,
+                      )
+                      .join('') +
+                    (itemsToImprove.length > 5
+                      ? `<li style="margin-bottom: 12px;"><em>E outras ${itemsToImprove.length - 5} recomendações descritas no seu PDF.</em></li>`
+                      : '')
+                  : '<li style="margin-bottom: 10px;">Parabéns! Sua serventia demonstrou estar em total conformidade com os requisitos avaliados.</li>'
+              }
+            </ul>
+          </div>
+          <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+            <p style="margin: 0;"><strong>Tiexpress Soluções em TI</strong></p>
+            <p style="margin: 4px 0;">Especialistas em adequação ao Provimento 213 CNJ</p>
+            <p style="margin: 0;">Contato: (62) 98477-8861 | <a href="https://www.tiexpress.tec.br" style="color: #2563eb; text-decoration: none;">www.tiexpress.tec.br</a></p>
+          </div>
+        </div>
+      `
+
+      try {
+        await sendEmailPdf({
+          nome: formData.nome,
+          email: formData.email,
+          cartorio: formData.cartorio,
+          score: score,
+          recomendacoes: itemsToImprove.slice(0, 10).map((item) => ({
+            categoria: item.categoria,
+            texto:
+              item.recomendacao ||
+              QUESTIONS.find((q) => q.id === item.id)?.recommendation ||
+              'Verifique esta exigência.',
+          })),
+        })
+        toast({
+          title: 'Email enviado com sucesso!',
+          description: 'Enviamos uma cópia do relatório para o seu e-mail.',
+        })
+      } catch (err) {
+        console.error('Failed to send email:', err)
+        toast({
+          title: 'Aviso',
+          description: 'O PDF será baixado, mas não foi possível enviar o email no momento.',
+          variant: 'destructive',
+        })
+      }
+
       setIsModalOpen(false)
 
       // Give time for modal to close before printing
