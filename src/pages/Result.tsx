@@ -34,7 +34,7 @@ import {
   Building2,
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
-import { upsertLeadByEmail } from '@/services/api'
+import { upsertLead } from '@/services/api'
 
 export default function Result() {
   const { leadData, score, answers, reset, questions } = useChecklist()
@@ -58,7 +58,7 @@ export default function Result() {
 
     const saveLead = async () => {
       try {
-        const record = await upsertLeadByEmail({
+        const record = await upsertLead({
           nome: leadData.nome,
           email: leadData.email,
           telefone: leadData.telefone,
@@ -154,7 +154,7 @@ export default function Result() {
 
     setIsSubmitting(true)
     try {
-      await upsertLeadByEmail({
+      await upsertLead({
         ...formData,
         score,
         notas: 'Lead autorizou contato ao baixar PDF.',
