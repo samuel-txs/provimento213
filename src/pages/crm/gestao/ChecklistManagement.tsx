@@ -20,7 +20,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Pencil, Trash2, Plus, Loader2, GripVertical } from 'lucide-react'
+import { Pencil, Trash2, Plus, Loader2, GripVertical, Download, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import pb from '@/lib/pocketbase/client'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -52,6 +52,15 @@ export default function ChecklistManagement() {
     texto_pergunta: '',
     ordem: 0,
   })
+
+  // Export / Import State
+  const [isExporting, setIsExporting] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importPreview, setImportPreview] = useState<any[]>([])
+  const [importError, setImportError] = useState<string | null>(null)
+  const [isParsing, setIsParsing] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
 
   useEffect(() => {
     if (!authLoading && user?.role !== 'admin') {
@@ -137,6 +146,161 @@ export default function ChecklistManagement() {
     setIsContextualCreate(false)
     setFormData({ categoria: q.categoria, texto_pergunta: q.texto_pergunta, ordem: q.ordem })
     setIsModalOpen(true)
+  }
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const data = await pb.send('/backend/v1/checklist/export', { method: 'GET' })
+      const blob = new Blob(['\uFEFF' + data.csvText], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download =
+        data.filename || `Checklist_Tiexpress_${new Date().toISOString().split('T')[0]}.csv`
+      link.click()
+      URL.revokeObjectURL(link.href)
+      toast.success('Checklist exportado com sucesso.')
+    } catch (e) {
+      toast.error('Erro ao exportar checklist.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImportFile(file)
+    setImportError(null)
+    setImportPreview([])
+    setIsParsing(true)
+
+    const reader = new FileReader()
+    reader.onload = async (ev) => {
+      try {
+        const target = ev.target
+        if (!target || typeof target.result !== 'string') {
+          throw new Error('Falha ao ler o arquivo')
+        }
+        const text = target.result
+
+        const res = await pb.send('/backend/v1/checklist/parse', {
+          method: 'POST',
+          body: JSON.stringify({ csvText: text }),
+        })
+
+        const rows = res.rows || []
+        if (rows.length === 0) {
+          setImportError('O arquivo está vazio.')
+          setIsParsing(false)
+          return
+        }
+
+        const firstRow = rows[0]
+        const requiredColumns = [
+          'Ordem',
+          'Categoria',
+          'Pergunta',
+          'Opção_1',
+          'Opção_2',
+          'Opção_3',
+          'Opção_4',
+        ]
+        for (const col of requiredColumns) {
+          if (!(col in firstRow)) {
+            setImportError(`Erro: Coluna ${col} está faltando`)
+            setIsParsing(false)
+            return
+          }
+        }
+
+        setImportPreview(rows)
+      } catch (err) {
+        setImportError('Erro ao processar arquivo. Verifique se é um arquivo CSV válido.')
+      } finally {
+        setIsParsing(false)
+      }
+    }
+    reader.onerror = () => {
+      setImportError('Erro ao ler o arquivo local.')
+      setIsParsing(false)
+    }
+    reader.readAsText(file)
+  }
+
+  const handleConfirmImport = async () => {
+    if (importPreview.length === 0) return
+    setIsImporting(true)
+    try {
+      const existingPerguntas = await pb.collection('perguntas_checklist').getFullList()
+      let count = 0
+
+      for (const row of importPreview) {
+        const ordem = Number(row['Ordem']) || (count + 1) * 10
+        const categoria = String(row['Categoria'] || '').trim()
+        const pergunta = String(row['Pergunta'] || '').trim()
+
+        if (!categoria || !pergunta) continue
+
+        let pId = ''
+        const existing = existingPerguntas.find(
+          (p) => p.texto_pergunta === pergunta && p.categoria === categoria,
+        )
+
+        if (existing) {
+          pId = existing.id
+          await pb.collection('perguntas_checklist').update(pId, { ordem })
+        } else {
+          const nova = await pb.collection('perguntas_checklist').create({
+            categoria,
+            texto_pergunta: pergunta,
+            ordem,
+          })
+          pId = nova.id
+        }
+
+        const defaultOptions = [
+          { valor: 'não', texto: String(row['Opção_1'] || 'Não'), ordem: 1 },
+          { valor: 'parcial', texto: String(row['Opção_2'] || 'Parcial'), ordem: 2 },
+          { valor: 'completo', texto: String(row['Opção_3'] || 'Completo'), ordem: 3 },
+          { valor: 'nao_sei', texto: String(row['Opção_4'] || 'Não Sei Informar'), ordem: 4 },
+        ]
+
+        try {
+          const existingOpts = await pb
+            .collection('opcoes_resposta')
+            .getFullList({ filter: `pergunta_id="${pId}"` })
+          await Promise.all(
+            existingOpts.map((opt) => pb.collection('opcoes_resposta').delete(opt.id)),
+          )
+        } catch {
+          /* intentionally ignored */
+        }
+
+        await Promise.all(
+          defaultOptions.map((opt) =>
+            pb.collection('opcoes_resposta').create({
+              pergunta_id: pId,
+              texto_opcao: opt.texto,
+              valor: opt.valor,
+              ordem: opt.ordem,
+            }),
+          ),
+        )
+        count++
+      }
+
+      toast.success(`Sucesso! ${count} perguntas importadas.`)
+      setIsImportModalOpen(false)
+      setImportPreview([])
+      setImportFile(null)
+      fetchQuestions()
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao importar perguntas.')
+    } finally {
+      setIsImporting(false)
+    }
   }
 
   // --- Drag and Drop Logic ---
@@ -276,9 +440,37 @@ export default function ChecklistManagement() {
     <div className="space-y-6 pb-24 relative">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white">Gestão do Checklist</h2>
-        <Button onClick={() => openNew('')}>
-          <Plus className="w-4 h-4 mr-2" /> Nova Categoria
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleExport}
+            disabled={isExporting}
+            className="border-slate-700 text-slate-300 hover:bg-slate-800"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Exportar CSV
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsImportModalOpen(true)
+              setImportError(null)
+              setImportPreview([])
+              setImportFile(null)
+            }}
+            className="border-slate-700 text-slate-300 hover:bg-slate-800"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Importar CSV
+          </Button>
+          <Button onClick={() => openNew('')}>
+            <Plus className="w-4 h-4 mr-2" /> Nova Categoria
+          </Button>
+        </div>
       </div>
 
       {Object.keys(groupedQuestions).length === 0 ? (
@@ -526,6 +718,120 @@ export default function ChecklistManagement() {
               <Button type="submit">Mover</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import CSV Dialog */}
+      <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
+        <DialogContent className="bg-slate-900 text-slate-200 border-slate-800 sm:max-w-[800px] max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Importar Checklist de CSV</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-4 pt-4 pr-2">
+            {!importPreview.length && !isParsing && (
+              <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
+                <Input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <Label
+                  htmlFor="file-upload"
+                  className="cursor-pointer flex flex-col items-center justify-center space-y-2"
+                >
+                  <Upload className="w-8 h-8 text-slate-400" />
+                  <span className="text-slate-300 font-medium">
+                    Clique para selecionar um arquivo
+                  </span>
+                  <span className="text-slate-500 text-sm">Formato CSV suportado</span>
+                </Label>
+              </div>
+            )}
+
+            {isParsing && (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <span className="text-slate-400">Analisando arquivo...</span>
+              </div>
+            )}
+
+            {importError && (
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-lg">
+                {importError}
+              </div>
+            )}
+
+            {importPreview.length > 0 && !isParsing && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400">
+                    Pré-visualização ({importPreview.length} perguntas)
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setImportPreview([])
+                      setImportFile(null)
+                      setImportError(null)
+                    }}
+                  >
+                    Limpar
+                  </Button>
+                </div>
+                <div className="border border-slate-800 rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-slate-950">
+                      <TableRow className="border-slate-800">
+                        <TableHead className="text-slate-400">Ordem</TableHead>
+                        <TableHead className="text-slate-400">Categoria</TableHead>
+                        <TableHead className="text-slate-400">Pergunta</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {importPreview.slice(0, 5).map((row, idx) => (
+                        <TableRow key={idx} className="border-slate-800">
+                          <TableCell className="text-slate-300">{row['Ordem']}</TableCell>
+                          <TableCell className="text-slate-300">{row['Categoria']}</TableCell>
+                          <TableCell
+                            className="text-slate-300 max-w-xs truncate"
+                            title={row['Pergunta']}
+                          >
+                            {row['Pergunta']}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {importPreview.length > 5 && (
+                    <div className="p-3 text-center text-sm text-slate-500 bg-slate-950/50 border-t border-slate-800">
+                      E mais {importPreview.length - 5} perguntas...
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="pt-4 border-t border-slate-800 mt-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsImportModalOpen(false)}
+              className="border-slate-700 text-slate-300 hover:bg-slate-800"
+              disabled={isImporting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleConfirmImport}
+              disabled={importPreview.length === 0 || isImporting}
+            >
+              {isImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Confirmar Importação
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
