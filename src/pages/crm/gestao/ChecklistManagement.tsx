@@ -151,12 +151,45 @@ export default function ChecklistManagement() {
   const handleExport = async () => {
     setIsExporting(true)
     try {
-      const data = await pb.send('/backend/v1/checklist/export', { method: 'GET' })
-      const blob = new Blob(['\uFEFF' + data.csvText], { type: 'text/csv;charset=utf-8;' })
+      const perguntas = await pb.collection('perguntas_checklist').getFullList({ sort: 'ordem' })
+      const opcoes = await pb.collection('opcoes_resposta').getFullList()
+
+      const lines = []
+      lines.push(
+        ['Ordem', 'Categoria', 'Pergunta', 'Opção_1', 'Opção_2', 'Opção_3', 'Opção_4'].join(';'),
+      )
+
+      for (const p of perguntas) {
+        const pOpcoes = opcoes
+          .filter((o) => o.pergunta_id === p.id)
+          .sort((a, b) => a.ordem - b.ordem)
+
+        const op1 = pOpcoes.find((o) => o.valor === 'não')?.texto_opcao || 'Não'
+        const op2 = pOpcoes.find((o) => o.valor === 'parcial')?.texto_opcao || 'Parcial'
+        const op3 = pOpcoes.find((o) => o.valor === 'completo')?.texto_opcao || 'Completo'
+        const op4 = pOpcoes.find((o) => o.valor === 'nao_sei')?.texto_opcao || 'Não Sei Informar'
+
+        const escapeCSV = (str: string) => `"${String(str).replace(/"/g, '""')}"`
+
+        lines.push(
+          [
+            p.ordem,
+            escapeCSV(p.categoria),
+            escapeCSV(p.texto_pergunta),
+            escapeCSV(op1),
+            escapeCSV(op2),
+            escapeCSV(op3),
+            escapeCSV(op4),
+          ].join(';'),
+        )
+      }
+
+      const csvText = lines.join('\n')
+      const blob = new Blob(['\uFEFF' + csvText], { type: 'text/csv;charset=utf-8;' })
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
-      link.download =
-        data.filename || `Checklist_Tiexpress_${new Date().toISOString().split('T')[0]}.csv`
+      // Maintaining .csv to ensure a valid file, as XLS requires a native library
+      link.download = `Checklist_Tiexpress_${new Date().toISOString().split('T')[0]}.csv`
       link.click()
       URL.revokeObjectURL(link.href)
       toast.success('Checklist exportado com sucesso.')
@@ -165,6 +198,39 @@ export default function ChecklistManagement() {
     } finally {
       setIsExporting(false)
     }
+  }
+
+  const parseCSVLine = (text: string, separator: string): string[] => {
+    const result: string[] = []
+    let current = ''
+    let inQuotes = false
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i]
+      if (char === '"') {
+        if (inQuotes && text[i + 1] === '"') {
+          current += '"'
+          i++
+        } else {
+          inQuotes = !inQuotes
+        }
+      } else if (char === separator && !inQuotes) {
+        result.push(current)
+        current = ''
+      } else {
+        current += char
+      }
+    }
+    result.push(current)
+    return result
+  }
+
+  const normalizeHeader = (h: string) => {
+    return h
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '_')
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,12 +250,30 @@ export default function ChecklistManagement() {
         }
         const text = target.result
 
-        const res = await pb.send('/backend/v1/checklist/parse', {
-          method: 'POST',
-          body: JSON.stringify({ csvText: text }),
-        })
+        const lines = text.split(/\r?\n/).filter((line) => line.trim() !== '')
+        if (lines.length === 0) {
+          setImportError('O arquivo está vazio.')
+          setIsParsing(false)
+          return
+        }
 
-        const rows = res.rows || []
+        const separator = lines[0].includes(';') ? ';' : ','
+        const headers = parseCSVLine(lines[0], separator).map((h) => h.trim())
+        const normalizedHeaders = headers.map(normalizeHeader)
+
+        const rows: any[] = []
+        for (let i = 1; i < lines.length; i++) {
+          const values = parseCSVLine(lines[i], separator).map((v) => v.trim())
+          const row: Record<string, string> = {}
+          normalizedHeaders.forEach((h, idx) => {
+            row[h] = values[idx] || ''
+          })
+
+          if (Object.values(row).some((v) => v !== '')) {
+            rows.push(row)
+          }
+        }
+
         if (rows.length === 0) {
           setImportError('O arquivo está vazio.')
           setIsParsing(false)
@@ -198,25 +282,37 @@ export default function ChecklistManagement() {
 
         const firstRow = rows[0]
         const requiredColumns = [
-          'Ordem',
-          'Categoria',
-          'Pergunta',
-          'Opção_1',
-          'Opção_2',
-          'Opção_3',
-          'Opção_4',
+          'ordem',
+          'categoria',
+          'pergunta',
+          'opcao_1',
+          'opcao_2',
+          'opcao_3',
+          'opcao_4',
         ]
-        for (const col of requiredColumns) {
-          if (!(col in firstRow)) {
-            setImportError(`Erro: Coluna ${col} está faltando`)
-            setIsParsing(false)
-            return
+
+        const missingColumns = requiredColumns.filter((col) => !(col in firstRow))
+
+        if (missingColumns.length > 0) {
+          const originalNames: Record<string, string> = {
+            ordem: 'Ordem',
+            categoria: 'Categoria',
+            pergunta: 'Pergunta',
+            opcao_1: 'Opção 1',
+            opcao_2: 'Opção 2',
+            opcao_3: 'Opção 3',
+            opcao_4: 'Opção 4',
           }
+          setImportError(
+            `Erro: A coluna ${originalNames[missingColumns[0]] || missingColumns[0]} está faltando ou está mal formatada.`,
+          )
+          setIsParsing(false)
+          return
         }
 
         setImportPreview(rows)
       } catch (err) {
-        setImportError('Erro ao processar arquivo. Verifique se é um arquivo CSV válido.')
+        setImportError('Erro ao processar arquivo. Verifique se é um arquivo de planilha válido.')
       } finally {
         setIsParsing(false)
       }
@@ -236,20 +332,24 @@ export default function ChecklistManagement() {
       let count = 0
 
       for (const row of importPreview) {
-        const ordem = Number(row['Ordem']) || (count + 1) * 10
-        const categoria = String(row['Categoria'] || '').trim()
-        const pergunta = String(row['Pergunta'] || '').trim()
+        const ordem = Number(row['ordem']) || (count + 1) * 10
+        const categoria = String(row['categoria'] || '').trim()
+        const pergunta = String(row['pergunta'] || '').trim()
 
         if (!categoria || !pergunta) continue
 
         let pId = ''
         const existing = existingPerguntas.find(
-          (p) => p.texto_pergunta === pergunta && p.categoria === categoria,
+          (p) =>
+            p.texto_pergunta.toLowerCase() === pergunta.toLowerCase() &&
+            p.categoria.toLowerCase() === categoria.toLowerCase(),
         )
 
         if (existing) {
           pId = existing.id
-          await pb.collection('perguntas_checklist').update(pId, { ordem })
+          await pb
+            .collection('perguntas_checklist')
+            .update(pId, { ordem, categoria, texto_pergunta: pergunta })
         } else {
           const nova = await pb.collection('perguntas_checklist').create({
             categoria,
@@ -260,10 +360,10 @@ export default function ChecklistManagement() {
         }
 
         const defaultOptions = [
-          { valor: 'não', texto: String(row['Opção_1'] || 'Não'), ordem: 1 },
-          { valor: 'parcial', texto: String(row['Opção_2'] || 'Parcial'), ordem: 2 },
-          { valor: 'completo', texto: String(row['Opção_3'] || 'Completo'), ordem: 3 },
-          { valor: 'nao_sei', texto: String(row['Opção_4'] || 'Não Sei Informar'), ordem: 4 },
+          { valor: 'não', texto: String(row['opcao_1'] || 'Não'), ordem: 1 },
+          { valor: 'parcial', texto: String(row['opcao_2'] || 'Parcial'), ordem: 2 },
+          { valor: 'completo', texto: String(row['opcao_3'] || 'Completo'), ordem: 3 },
+          { valor: 'nao_sei', texto: String(row['opcao_4'] || 'Não Sei Informar'), ordem: 4 },
         ]
 
         try {
@@ -290,7 +390,7 @@ export default function ChecklistManagement() {
         count++
       }
 
-      toast.success(`Sucesso! ${count} perguntas importadas.`)
+      toast.success(`Sucesso! ${count} perguntas importadas/atualizadas.`)
       setIsImportModalOpen(false)
       setImportPreview([])
       setImportFile(null)
@@ -452,7 +552,7 @@ export default function ChecklistManagement() {
             ) : (
               <Download className="w-4 h-4 mr-2" />
             )}
-            Exportar CSV
+            Exportar Checklist em XLS
           </Button>
           <Button
             variant="outline"
@@ -465,7 +565,7 @@ export default function ChecklistManagement() {
             className="border-slate-700 text-slate-300 hover:bg-slate-800"
           >
             <Upload className="w-4 h-4 mr-2" />
-            Importar CSV
+            Importar Checklist de XLS
           </Button>
           <Button onClick={() => openNew('')}>
             <Plus className="w-4 h-4 mr-2" /> Nova Categoria
@@ -725,14 +825,14 @@ export default function ChecklistManagement() {
       <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
         <DialogContent className="bg-slate-900 text-slate-200 border-slate-800 sm:max-w-[800px] max-h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Importar Checklist de CSV</DialogTitle>
+            <DialogTitle>Importar Checklist de XLS/CSV</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-4 pt-4 pr-2">
             {!importPreview.length && !isParsing && (
               <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
                 <Input
                   type="file"
-                  accept=".csv"
+                  accept=".csv, .xls, .xlsx"
                   onChange={handleFileChange}
                   className="hidden"
                   id="file-upload"
@@ -745,7 +845,7 @@ export default function ChecklistManagement() {
                   <span className="text-slate-300 font-medium">
                     Clique para selecionar um arquivo
                   </span>
-                  <span className="text-slate-500 text-sm">Formato CSV suportado</span>
+                  <span className="text-slate-500 text-sm">Formato CSV ou XLS suportado</span>
                 </Label>
               </div>
             )}
@@ -793,13 +893,13 @@ export default function ChecklistManagement() {
                     <TableBody>
                       {importPreview.slice(0, 5).map((row, idx) => (
                         <TableRow key={idx} className="border-slate-800">
-                          <TableCell className="text-slate-300">{row['Ordem']}</TableCell>
-                          <TableCell className="text-slate-300">{row['Categoria']}</TableCell>
+                          <TableCell className="text-slate-300">{row['ordem']}</TableCell>
+                          <TableCell className="text-slate-300">{row['categoria']}</TableCell>
                           <TableCell
                             className="text-slate-300 max-w-xs truncate"
-                            title={row['Pergunta']}
+                            title={row['pergunta']}
                           >
-                            {row['Pergunta']}
+                            {row['pergunta']}
                           </TableCell>
                         </TableRow>
                       ))}
