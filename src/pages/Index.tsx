@@ -77,7 +77,7 @@ export default function Index() {
                       <Input
                         id="nome"
                         placeholder="Seu nome"
-                        value={nome}
+                        value={nome ?? ''}
                         onChange={(e) => setNome(e.target.value)}
                         required
                         className="h-11"
@@ -91,7 +91,7 @@ export default function Index() {
                         id="email"
                         type="email"
                         placeholder="contato@cartorio.com.br"
-                        value={email}
+                        value={email ?? ''}
                         onChange={(e) => setEmail(e.target.value)}
                         required
                         className="h-11"
@@ -104,7 +104,7 @@ export default function Index() {
                       <Input
                         id="telefone"
                         placeholder="(00) 00000-0000"
-                        value={telefone}
+                        value={telefone ?? ''}
                         onChange={(e) => setTelefone(e.target.value)}
                         required
                         className="h-11"
@@ -118,7 +118,7 @@ export default function Index() {
                         <Input
                           id="cartorio"
                           placeholder="Nome da Serventia"
-                          value={cartorio}
+                          value={cartorio ?? ''}
                           onChange={(e) => setCartorio(e.target.value)}
                           required
                           className="h-11"
@@ -131,7 +131,7 @@ export default function Index() {
                         <Input
                           id="cnpj"
                           placeholder="00.000.000/0000-00"
-                          value={cnpj}
+                          value={cnpj ?? ''}
                           onChange={(e) => setCnpj(e.target.value)}
                           required
                           className="h-11"
