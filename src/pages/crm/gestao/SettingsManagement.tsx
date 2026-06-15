@@ -5,15 +5,48 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 import { useConfiguracoes, hexToHsl } from '@/hooks/use-configuracoes'
 import pb from '@/lib/pocketbase/client'
 import { toast } from 'sonner'
-import { Loader2, Save, MonitorPlay, Copy, AlertTriangle, ArrowRight } from 'lucide-react'
+import {
+  Loader2,
+  Save,
+  MonitorPlay,
+  Copy,
+  AlertTriangle,
+  ArrowRight,
+  Mail,
+  Send,
+  History,
+} from 'lucide-react'
 
 export default function SettingsManagement() {
   const { configs, loading } = useConfiguracoes()
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
+  const [logs, setLogs] = useState<any[]>([])
+  const [testing, setTesting] = useState(false)
+  const [testEmail, setTestEmail] = useState('')
+
+  const fetchLogs = async () => {
+    try {
+      const records = await pb.collection('logs_email').getList(1, 10, {
+        sort: '-created',
+      })
+      setLogs(records.items)
+    } catch (err) {
+      console.error('Failed to fetch logs', err)
+    }
+  }
+
+  useEffect(() => {
+    if (!loading) {
+      fetchLogs()
+    }
+  }, [loading])
 
   useEffect(() => {
     if (!loading) {
@@ -41,11 +74,35 @@ export default function SettingsManagement() {
           'Prazo de adequação ao Provimento 213 do CNJ em vigor — serventias não adequadas estão sujeitas a sanções administrativas',
         banner_botao_texto: configs['banner_botao_texto'] || 'Verificar Status da Minha Serventia',
         banner_cor: configs['banner_cor'] || '#b91c1c',
+        email_sender_name: configs['email_sender_name'] || 'Tiexpress',
+        email_reply_to: configs['email_reply_to'] || 'contato@tiexpress.tec.br',
       })
     }
   }, [configs, loading])
 
   const handleChange = (k: string, v: string) => setFormData((p) => ({ ...p, [k]: v }))
+
+  const handleTestEmail = async () => {
+    if (!testEmail) {
+      toast.error('Informe um e-mail para o teste.')
+      return
+    }
+    setTesting(true)
+    try {
+      await pb.send('/backend/v1/test-email', {
+        method: 'POST',
+        body: JSON.stringify({ email: testEmail }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      toast.success('E-mail de teste disparado com sucesso!')
+      fetchLogs()
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao disparar o e-mail de teste.')
+      fetchLogs()
+    } finally {
+      setTesting(false)
+    }
+  }
 
   const handleSave = async () => {
     if (formData.email_diagnostico_destinatarios) {
@@ -545,6 +602,133 @@ export default function SettingsManagement() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Configurações Globais de Envio */}
+              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6 shadow-sm mt-8">
+                <div className="border-b border-slate-800 pb-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Mail className="w-5 h-5 text-primary" /> Configurações de Envio
+                  </h3>
+                  <p className="text-sm text-slate-400 mt-1">
+                    Configure o remetente e endereço de resposta para os e-mails automáticos.
+                  </p>
+                </div>
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">Nome do Remetente (Sender Name)</Label>
+                    <Input
+                      value={formData.email_sender_name || ''}
+                      onChange={(e) => handleChange('email_sender_name', e.target.value)}
+                      className="bg-slate-950 border-slate-800 text-white"
+                      placeholder="Ex: Tiexpress Diagnóstico"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-slate-300">E-mail de Resposta (Reply-To)</Label>
+                    <Input
+                      value={formData.email_reply_to || ''}
+                      onChange={(e) => handleChange('email_reply_to', e.target.value)}
+                      className="bg-slate-950 border-slate-800 text-white"
+                      placeholder="contato@empresa.com"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Área de Teste de E-mail */}
+              <div className="grid lg:grid-cols-2 gap-8 mt-8">
+                <Card className="bg-slate-900 border-slate-800">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Send className="w-5 h-5 text-primary" /> Testar Conectividade
+                    </CardTitle>
+                    <CardDescription className="text-slate-400">
+                      Envie um e-mail de teste para verificar as configurações e a integração com o
+                      provedor.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-slate-300">E-mail de Destino para Teste</Label>
+                      <Input
+                        type="email"
+                        value={testEmail}
+                        onChange={(e) => setTestEmail(e.target.value)}
+                        placeholder="admin@exemplo.com"
+                        className="bg-slate-950 border-slate-800 text-white"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleTestEmail}
+                      disabled={testing || !testEmail}
+                      className="w-full bg-primary hover:bg-primary/90 text-white"
+                    >
+                      {testing ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4 mr-2" />
+                      )}
+                      Enviar E-mail de Teste
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-slate-900 border-slate-800">
+                  <CardHeader>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <History className="w-5 h-5 text-primary" /> Logs de Execução
+                    </CardTitle>
+                    <CardDescription className="text-slate-400">
+                      Últimos disparos de e-mail realizados pelo sistema.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {logs.length === 0 ? (
+                      <p className="text-sm text-slate-500 text-center py-4">
+                        Nenhum log encontrado.
+                      </p>
+                    ) : (
+                      <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2">
+                        {logs.map((log) => (
+                          <div
+                            key={log.id}
+                            className="bg-slate-950 border border-slate-800 p-3 rounded-lg flex flex-col gap-1"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className="text-xs font-medium text-slate-300 truncate"
+                                title={log.destinatario}
+                              >
+                                {log.destinatario}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  'text-[10px] px-1.5 py-0 shrink-0',
+                                  log.status === 'sucesso'
+                                    ? 'text-emerald-400 border-emerald-900 bg-emerald-950/30'
+                                    : 'text-red-400 border-red-900 bg-red-950/30',
+                                )}
+                              >
+                                {log.status === 'sucesso' ? 'Sucesso' : 'Erro'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px] text-slate-500">
+                              <span>{log.template_name}</span>
+                              <span>{new Date(log.created).toLocaleString()}</span>
+                            </div>
+                            {log.status === 'erro' && log.erro_detalhe && (
+                              <div className="text-[10px] text-red-400/80 mt-1 bg-red-950/20 p-1.5 rounded">
+                                {log.erro_detalhe}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
