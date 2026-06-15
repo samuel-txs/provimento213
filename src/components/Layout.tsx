@@ -19,7 +19,7 @@ export function Layout() {
   const navLinks = [
     { name: 'O Provimento', path: '/#provimento' },
     { name: 'Serviços', path: '/servicos' },
-    { name: 'Benefícios', path: '/#beneficios' },
+    { name: 'Faça seu Checklist', path: '/checklist' },
     { name: 'Contato', path: '#contato' },
   ]
 
@@ -78,9 +78,9 @@ export function Layout() {
           <nav className="hidden md:flex items-center gap-8">
             <div className="flex items-center gap-6 text-sm font-medium text-slate-300">
               {navLinks.map((link) => (
-                <a key={link.name} href={link.path} className="hover:text-white transition-colors">
+                <Link key={link.name} to={link.path} className="hover:text-white transition-colors">
                   {link.name}
-                </a>
+                </Link>
               ))}
             </div>
             <Button
@@ -114,13 +114,13 @@ export function Layout() {
         >
           <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.name}
-                href={link.path}
+                to={link.path}
                 className="text-base font-medium text-white py-2 border-b border-slate-800"
               >
                 {link.name}
-              </a>
+              </Link>
             ))}
             <Button
               asChild
