@@ -8,19 +8,25 @@ import { useChecklist } from '@/hooks/use-checklist'
 
 export default function Index() {
   const navigate = useNavigate()
-  const { setLeadData } = useChecklist()
+  const { setLeadData, leadData } = useChecklist()
 
   // State initialization fixed to prevent uncontrolled input warnings
   // All state variables linked to input fields are properly initialized with an empty string ("")
-  const [nome, setNome] = useState('')
-  const [email, setEmail] = useState('')
-  const [telefone, setTelefone] = useState('')
-  const [cartorio, setCartorio] = useState('')
-  const [cnpj, setCnpj] = useState('')
+  const [formData, setFormData] = useState({
+    nome: leadData?.nome ?? '',
+    email: leadData?.email ?? '',
+    telefone: leadData?.telefone ?? '',
+    cartorio: leadData?.cartorio ?? '',
+    cnpj: leadData?.cnpj ?? '',
+  })
+
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
 
   const handleStart = (e: React.FormEvent) => {
     e.preventDefault()
-    setLeadData({ nome, email, telefone, cartorio, cnpj })
+    setLeadData(formData)
     navigate('/checklist')
   }
 
@@ -77,8 +83,8 @@ export default function Index() {
                       <Input
                         id="nome"
                         placeholder="Seu nome"
-                        value={nome ?? ''}
-                        onChange={(e) => setNome(e.target.value)}
+                        value={formData.nome ?? ''}
+                        onChange={(e) => handleChange('nome', e.target.value)}
                         required
                         className="h-11"
                       />
@@ -91,8 +97,8 @@ export default function Index() {
                         id="email"
                         type="email"
                         placeholder="contato@cartorio.com.br"
-                        value={email ?? ''}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={formData.email ?? ''}
+                        onChange={(e) => handleChange('email', e.target.value)}
                         required
                         className="h-11"
                       />
@@ -104,8 +110,8 @@ export default function Index() {
                       <Input
                         id="telefone"
                         placeholder="(00) 00000-0000"
-                        value={telefone ?? ''}
-                        onChange={(e) => setTelefone(e.target.value)}
+                        value={formData.telefone ?? ''}
+                        onChange={(e) => handleChange('telefone', e.target.value)}
                         required
                         className="h-11"
                       />
@@ -118,8 +124,8 @@ export default function Index() {
                         <Input
                           id="cartorio"
                           placeholder="Nome da Serventia"
-                          value={cartorio ?? ''}
-                          onChange={(e) => setCartorio(e.target.value)}
+                          value={formData.cartorio ?? ''}
+                          onChange={(e) => handleChange('cartorio', e.target.value)}
                           required
                           className="h-11"
                         />
@@ -131,8 +137,8 @@ export default function Index() {
                         <Input
                           id="cnpj"
                           placeholder="00.000.000/0000-00"
-                          value={cnpj ?? ''}
-                          onChange={(e) => setCnpj(e.target.value)}
+                          value={formData.cnpj ?? ''}
+                          onChange={(e) => handleChange('cnpj', e.target.value)}
                           required
                           className="h-11"
                         />
