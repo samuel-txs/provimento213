@@ -1,179 +1,152 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import heroImg from '@/assets/hero-7d34f.png'
-import { Card, CardContent } from '@/components/ui/card'
-import { useConfiguracoes } from '@/hooks/use-configuracoes'
-import {
-  ShieldAlert,
-  Server,
-  Lock,
-  Activity,
-  CheckCircle2,
-  ArrowRight,
-  FileText,
-} from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { ShieldCheck, CheckCircle2, ArrowRight } from 'lucide-react'
+import { useChecklist } from '@/hooks/use-checklist'
 
 export default function Index() {
-  const { configs } = useConfiguracoes()
-  const msgBoasVindas =
-    configs['mensagem_boas_vindas'] || 'Sua serventia em conformidade com o Provimento 213 do CNJ.'
-  const nomeEmpresa = configs['nome_empresa'] || 'Tiexpress Soluções'
-  const telefoneContato = configs['telefone'] || '5562984778861'
-  const whatsappUrl = `https://wa.me/${telefoneContato.replace(/\D/g, '')}`
+  const navigate = useNavigate()
+  const { setLeadData } = useChecklist()
+
+  // State initialization fixed to prevent uncontrolled input warnings
+  // All state variables linked to input fields are properly initialized with an empty string ("")
+  const [nome, setNome] = useState('')
+  const [email, setEmail] = useState('')
+  const [telefone, setTelefone] = useState('')
+  const [cartorio, setCartorio] = useState('')
+  const [cnpj, setCnpj] = useState('')
+
+  const handleStart = (e: React.FormEvent) => {
+    e.preventDefault()
+    setLeadData({ nome, email, telefone, cartorio, cnpj })
+    navigate('/checklist')
+  }
 
   return (
-    <div className="flex flex-col animate-fade-in">
+    <div className="flex flex-col min-h-screen bg-slate-50">
       {/* Hero Section */}
-      <section className="relative pt-20 pb-32 overflow-hidden bg-primary/5">
-        <div className="absolute inset-0 z-0 bg-grid-slate-200/[0.04] bg-[size:32px_32px]"></div>
-        <div className="absolute inset-0 z-0 bg-gradient-to-b from-transparent to-background"></div>
-
-        <div className="container relative z-10 mx-auto px-4 text-center max-w-4xl animate-fade-in-up">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-8 rounded-full bg-secondary/10 text-secondary font-medium text-sm border border-secondary/20 shadow-sm">
-            <ShieldAlert className="h-4 w-4" />
-            Prazo de adequação em vigor
-          </div>
-
-          <h1 className="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight mb-6 whitespace-pre-wrap">
-            {msgBoasVindas}
-          </h1>
-
-          <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Realize agora um diagnóstico gratuito da sua infraestrutura de TI com a {nomeEmpresa} e
-            evite sanções. Rapidez, segurança e adequação total às normas do Conselho Nacional de
-            Justiça.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              size="lg"
-              asChild
-              className="w-full sm:w-auto text-base rounded-full px-8 shadow-elevation h-14"
-            >
-              <Link to="/checklist">
-                Iniciar Diagnóstico Gratuito
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              asChild
-              className="w-full sm:w-auto text-base rounded-full px-8 h-14 bg-white hover:bg-slate-50"
-            >
-              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                Falar com Especialista
-              </a>
-            </Button>
-          </div>
-        </div>
-
-        {/* Hero Image / Illustration */}
-        <div
-          className="container relative z-10 mx-auto px-4 mt-16 animate-slide-up"
-          style={{ animationDelay: '0.2s' }}
-        >
-          <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-800 bg-slate-900 aspect-video md:aspect-[21/9] max-w-5xl mx-auto flex items-center justify-center">
-            <img
-              src={heroImg}
-              alt="Infraestrutura de TI segura Provimento 213"
-              className="object-cover w-full h-full hover:scale-105 transition-transform duration-1000"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent flex items-end p-8">
-              <div className="bg-white/90 backdrop-blur rounded-xl p-4 shadow-lg flex items-center gap-4 animate-float">
-                <div className="bg-green-100 p-2 rounded-full">
-                  <CheckCircle2 className="text-green-600 h-6 w-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Análise Concluída</p>
-                  <p className="text-xs text-slate-600">Serventia 100% adequada ao CNJ</p>
-                </div>
+      <section className="relative pt-20 pb-32 overflow-hidden flex-1 flex items-center">
+        <div className="container px-4 mx-auto">
+          <div className="flex flex-col lg:flex-row items-center gap-12">
+            <div className="lg:w-1/2 space-y-8 animate-fade-in-up">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary font-medium text-sm">
+                <ShieldCheck className="h-4 w-4" />
+                <span>Adequação ao Provimento 213 CNJ</span>
               </div>
+              <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                Diagnóstico de Conformidade para <span className="text-primary">Cartórios</span>
+              </h1>
+              <p className="text-lg text-slate-600 leading-relaxed max-w-lg">
+                Avalie o nível de maturidade da infraestrutura e segurança da informação da sua
+                serventia. Descubra os pontos críticos que precisam de adequação imediata.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  'Análise de Hardware e Software EOL',
+                  'Políticas de Backup e Recuperação',
+                  'Proteção de Dados e Firewall',
+                  'Relatório detalhado com plano de ação',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-slate-700 font-medium">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Context Section */}
-      <section id="provimento" className="py-24 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">O que é o Provimento 213?</h2>
-            <p className="text-lg text-slate-600">
-              O Provimento nº 213 do CNJ estabelece os requisitos mínimos de segurança da informação
-              e infraestrutura tecnológica para os serviços notariais e de registro de todo o
-              Brasil, garantindo a proteção e integridade dos dados dos cidadãos.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Activity,
-                title: 'Redundância de Links',
-                desc: 'Exigência de múltiplos links de internet de diferentes provedores.',
-              },
-              {
-                icon: FileText,
-                title: 'Backup Seguro',
-                desc: 'Rotinas rigorosas de backup local e em nuvem, com testes periódicos de restore.',
-              },
-              {
-                icon: Lock,
-                title: 'Segurança de Perímetro',
-                desc: 'Uso obrigatório de firewalls, controle de acesso e VPN para trabalho remoto.',
-              },
-              {
-                icon: Server,
-                title: 'Infraestrutura Elétrica',
-                desc: 'Estabilidade energética com uso de no-breaks dimensionados para os servidores.',
-              },
-              {
-                icon: ShieldAlert,
-                title: 'Monitoramento',
-                desc: 'Gestão de logs e proteção avançada com antivírus (Endpoint) em todas as máquinas.',
-              },
-              {
-                icon: CheckCircle2,
-                title: 'Compliance',
-                desc: 'Adequação legal evita multas, paralisação dos serviços e perda da delegação.',
-              },
-            ].map((feature, i) => (
-              <Card
-                key={i}
-                className="border-none shadow-subtle hover:shadow-elevation transition-shadow duration-300 group"
-              >
-                <CardContent className="p-8">
-                  <div className="bg-primary/5 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white transition-colors duration-300">
-                    <feature.icon className="h-7 w-7 text-primary group-hover:text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                  <p className="text-slate-600 leading-relaxed">{feature.desc}</p>
+            <div
+              className="lg:w-1/2 w-full max-w-md animate-fade-in-up"
+              style={{ animationDelay: '0.2s' }}
+            >
+              <Card className="border-none shadow-elevation">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Iniciar Diagnóstico Gratuito</CardTitle>
+                  <CardDescription>
+                    Preencha os dados abaixo para iniciar a avaliação da sua serventia.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleStart} className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="nome" className="text-sm font-medium text-slate-700">
+                        Nome Completo
+                      </label>
+                      <Input
+                        id="nome"
+                        placeholder="Seu nome"
+                        value={nome}
+                        onChange={(e) => setNome(e.target.value)}
+                        required
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="email" className="text-sm font-medium text-slate-700">
+                        E-mail
+                      </label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="contato@cartorio.com.br"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="telefone" className="text-sm font-medium text-slate-700">
+                        WhatsApp / Telefone
+                      </label>
+                      <Input
+                        id="telefone"
+                        placeholder="(00) 00000-0000"
+                        value={telefone}
+                        onChange={(e) => setTelefone(e.target.value)}
+                        required
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="cartorio" className="text-sm font-medium text-slate-700">
+                          Cartório
+                        </label>
+                        <Input
+                          id="cartorio"
+                          placeholder="Nome da Serventia"
+                          value={cartorio}
+                          onChange={(e) => setCartorio(e.target.value)}
+                          required
+                          className="h-11"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="cnpj" className="text-sm font-medium text-slate-700">
+                          CNPJ
+                        </label>
+                        <Input
+                          id="cnpj"
+                          placeholder="00.000.000/0000-00"
+                          value={cnpj}
+                          onChange={(e) => setCnpj(e.target.value)}
+                          required
+                          className="h-11"
+                        />
+                      </div>
+                    </div>
+                    <Button type="submit" size="lg" className="w-full h-12 mt-2 group">
+                      Começar Avaliação
+                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </form>
                 </CardContent>
               </Card>
-            ))}
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* Trust & CTA Section */}
-      <section id="beneficios" className="py-24 bg-slate-900 text-white">
-        <div className="container mx-auto px-4 text-center max-w-3xl">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Não corra riscos desnecessários.</h2>
-          <p className="text-lg text-slate-300 mb-10">
-            Descubra em menos de 5 minutos o nível de adequação tecnológica do seu cartório e receba
-            um relatório com as ações necessárias para atingir a conformidade total.
-          </p>
-          <Button
-            size="lg"
-            asChild
-            className="rounded-full px-10 h-14 text-lg bg-secondary hover:bg-secondary/90 text-white shadow-lg shadow-secondary/25 border-none"
-          >
-            <Link to="/checklist">Começar Meu Diagnóstico Agora</Link>
-          </Button>
-          <p className="text-sm text-slate-400 mt-6 flex items-center justify-center gap-2">
-            <Lock className="h-4 w-4" /> Seus dados estão 100% seguros e não serão compartilhados.
-          </p>
         </div>
       </section>
     </div>
