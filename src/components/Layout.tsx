@@ -87,9 +87,7 @@ export function Layout() {
               asChild
               variant="outline"
               className="rounded-full px-6 font-semibold bg-transparent border-slate-700 text-white hover:bg-slate-800 hover:text-white"
-            >
-              <Link to="/carrinho">Carrinho</Link>
-            </Button>
+            ></Button>
             <Button asChild className="rounded-full px-6 font-semibold shadow-elevation text-white">
               <Link to="/checklist">Fazer Diagnóstico</Link>
             </Button>
