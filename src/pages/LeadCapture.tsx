@@ -34,18 +34,18 @@ const formSchema = z.object({
 
 export default function LeadCapture() {
   const navigate = useNavigate()
-  const { setLeadData, answers, score, questions } = useChecklist()
+  const { setLeadData, leadData, answers, score, questions } = useChecklist()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
     defaultValues: {
-      nome: '',
-      email: '',
-      telefone: '',
-      cartorio: '',
-      cnpj: '',
+      nome: leadData?.nome ?? '',
+      email: leadData?.email ?? '',
+      telefone: leadData?.telefone ?? '',
+      cartorio: leadData?.cartorio ?? '',
+      cnpj: leadData?.cnpj ?? '',
       lgpd: false,
     },
   })
@@ -57,6 +57,7 @@ export default function LeadCapture() {
       setIsSubmitting(true)
 
       const leadPayload = {
+        ...(leadData?.id ? { id: leadData.id } : {}),
         nome: String(values.nome),
         email: String(values.email),
         telefone: String(values.telefone),

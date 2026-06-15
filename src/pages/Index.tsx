@@ -3,12 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { ShieldCheck, CheckCircle2, ArrowRight } from 'lucide-react'
+import { ShieldCheck, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react'
 import { useChecklist } from '@/hooks/use-checklist'
+import { upsertLead } from '@/services/api'
+import { toast } from '@/hooks/use-toast'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
 
 export default function Index() {
   const navigate = useNavigate()
   const { setLeadData, leadData } = useChecklist()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // State initialization fixed to prevent uncontrolled input warnings
   // All state variables linked to input fields are properly initialized with an empty string ("")
@@ -24,10 +28,31 @@ export default function Index() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleStart = (e: React.FormEvent) => {
+  const handleStart = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLeadData(formData)
-    navigate('/checklist')
+    setIsSubmitting(true)
+
+    try {
+      // Create/Upsert the lead directly in the database as "novo" before navigating
+      const lead = await upsertLead({
+        ...formData,
+        status: 'novo',
+      })
+
+      // Store the persisted DB ID so it can be updated later
+      setLeadData({ ...formData, id: lead.id })
+      navigate('/checklist')
+    } catch (err) {
+      console.error(err)
+      toast({
+        title: 'Erro ao iniciar',
+        description:
+          getErrorMessage(err) || 'Verifique se os dados estão corretos e tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -144,9 +169,20 @@ export default function Index() {
                         />
                       </div>
                     </div>
-                    <Button type="submit" size="lg" className="w-full h-12 mt-2 group">
-                      Começar Avaliação
-                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="w-full h-12 mt-2 group"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <>
+                          Começar Avaliação
+                          <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
                     </Button>
                   </form>
                 </CardContent>
