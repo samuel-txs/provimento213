@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { ShieldCheck, ArrowRight, Loader2 } from 'lucide-react'
 import { upsertLead, createResposta, createScore } from '@/services/api'
 import { toast } from '@/hooks/use-toast'
@@ -39,6 +39,7 @@ export default function LeadCapture() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
+    mode: 'onChange',
     defaultValues: {
       nome: '',
       email: '',
@@ -48,6 +49,8 @@ export default function LeadCapture() {
       lgpd: false,
     },
   })
+
+  const { isValid } = form.formState
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -107,26 +110,23 @@ export default function LeadCapture() {
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center bg-muted/30 py-12 px-4 animate-fade-in">
+    <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 py-12 px-4 animate-fade-in min-h-screen">
       <div className="w-full max-w-xl">
         <div className="text-center mb-8 animate-slide-down">
-          <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-4">
-            <ShieldCheck className="h-8 w-8 text-primary" />
+          <div className="inline-flex items-center justify-center p-4 bg-primary/20 rounded-full mb-6">
+            <ShieldCheck className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Falta Pouco!</h1>
-          <p className="text-slate-500 mt-2">
-            Preencha seus dados profissionais para liberar o seu Relatório de Conformidade.
+          <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
+            Seu relatório de conformidade está pronto
+          </h1>
+          <p className="text-slate-300 mt-4 text-lg">
+            Para acessar seu resultado e receber orientação de um especialista em Provimento 213,
+            preencha seus dados:
           </p>
         </div>
 
-        <Card className="border-none shadow-elevation animate-slide-up">
-          <CardHeader className="pb-4">
-            <CardTitle>Dados de Contato</CardTitle>
-            <CardDescription>
-              Seu relatório será gerado imediatamente após o preenchimento.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <Card className="border-slate-800 bg-slate-900/60 shadow-2xl animate-slide-up backdrop-blur-md">
+          <CardContent className="pt-6">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 <FormField
@@ -134,11 +134,15 @@ export default function LeadCapture() {
                   name="nome"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome Completo</FormLabel>
+                      <FormLabel className="text-slate-200">Nome Completo</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: João Silva" className="h-11" {...field} />
+                        <Input
+                          placeholder="Ex: João Silva"
+                          className="h-11 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                          {...field}
+                        />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-400" />
                     </FormItem>
                   )}
                 />
@@ -148,16 +152,16 @@ export default function LeadCapture() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>E-mail Profissional</FormLabel>
+                        <FormLabel className="text-slate-200">E-mail Profissional</FormLabel>
                         <FormControl>
                           <Input
                             type="email"
                             placeholder="contato@cartorio.com.br"
-                            className="h-11"
+                            className="h-11 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-400" />
                       </FormItem>
                     )}
                   />
@@ -166,16 +170,16 @@ export default function LeadCapture() {
                     name="telefone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Telefone / WhatsApp</FormLabel>
+                        <FormLabel className="text-slate-200">Telefone / WhatsApp</FormLabel>
                         <FormControl>
                           <Input
                             type="tel"
                             placeholder="(11) 99999-9999"
-                            className="h-11"
+                            className="h-11 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-400" />
                       </FormItem>
                     )}
                   />
@@ -186,15 +190,15 @@ export default function LeadCapture() {
                     name="cartorio"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nome do Cartório</FormLabel>
+                        <FormLabel className="text-slate-200">Nome da serventia</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="1º Tabelionato de Notas"
-                            className="h-11"
+                            className="h-11 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-400" />
                       </FormItem>
                     )}
                   />
@@ -203,11 +207,15 @@ export default function LeadCapture() {
                     name="cnpj"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>CNPJ</FormLabel>
+                        <FormLabel className="text-slate-200">CNPJ</FormLabel>
                         <FormControl>
-                          <Input placeholder="00.000.000/0000-00" className="h-11" {...field} />
+                          <Input
+                            placeholder="00.000.000/0000-00"
+                            className="h-11 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <FormMessage className="text-red-400" />
                       </FormItem>
                     )}
                   />
@@ -217,36 +225,37 @@ export default function LeadCapture() {
                   control={form.control}
                   name="lgpd"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border rounded-lg bg-slate-50">
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border border-slate-800 rounded-lg bg-slate-900/80 mt-6">
                       <FormControl>
                         <Checkbox
                           checked={field.value}
                           onCheckedChange={field.onChange}
-                          className="mt-1"
+                          className="mt-1 border-slate-600 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel className="text-sm font-medium text-slate-700 leading-snug">
+                        <FormLabel className="text-sm font-medium text-slate-300 leading-snug cursor-pointer">
                           Autorizo a Tiexpress Soluções a entrar em contato para apresentar soluções
-                          de conformidade ao Provimento 213.
+                          de conformidade ao Provimento 213
                         </FormLabel>
+                        <FormMessage className="text-red-400" />
                       </div>
                     </FormItem>
                   )}
                 />
 
-                <div className="pt-4">
+                <div className="pt-6">
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full h-14 text-base rounded-xl group"
-                    disabled={isSubmitting}
+                    className="w-full h-14 text-base rounded-xl group font-semibold"
+                    disabled={!isValid || isSubmitting}
                   >
                     {isSubmitting ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
                       <>
-                        Ver Resultados{' '}
+                        Ver Meu Resultado
                         <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
