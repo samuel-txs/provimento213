@@ -53,6 +53,7 @@ import {
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function LeadDetail() {
   const { id } = useParams()
