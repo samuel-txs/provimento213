@@ -191,7 +191,12 @@ export function Layout() {
                 </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a
+                  href="https://atos.cnj.jus.br/files/original14120720260223699c60372c2be.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors"
+                >
                   Ler o Provimento Oficial (PDF)
                 </a>
               </li>
