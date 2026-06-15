@@ -188,7 +188,6 @@ export default function ChecklistManagement() {
       const blob = new Blob(['\uFEFF' + csvText], { type: 'text/csv;charset=utf-8;' })
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
-      // Maintaining .csv to ensure a valid file, as XLS requires a native library
       link.download = `Checklist_Tiexpress_${new Date().toISOString().split('T')[0]}.csv`
       link.click()
       URL.revokeObjectURL(link.href)
@@ -248,7 +247,9 @@ export default function ChecklistManagement() {
         if (!target || typeof target.result !== 'string') {
           throw new Error('Falha ao ler o arquivo')
         }
-        const text = target.result
+
+        // Remove UTF-8 BOM if present
+        const text = target.result.replace(/^\uFEFF/, '')
 
         const lines = text.split(/\r?\n/).filter((line) => line.trim() !== '')
         if (lines.length === 0) {
@@ -312,7 +313,7 @@ export default function ChecklistManagement() {
 
         setImportPreview(rows)
       } catch (err) {
-        setImportError('Erro ao processar arquivo. Verifique se é um arquivo de planilha válido.')
+        setImportError('Erro ao processar arquivo. Verifique se é um arquivo CSV válido.')
       } finally {
         setIsParsing(false)
       }
@@ -552,7 +553,7 @@ export default function ChecklistManagement() {
             ) : (
               <Download className="w-4 h-4 mr-2" />
             )}
-            Exportar Checklist em XLS
+            Exportar Checklist em CSV
           </Button>
           <Button
             variant="outline"
@@ -565,7 +566,7 @@ export default function ChecklistManagement() {
             className="border-slate-700 text-slate-300 hover:bg-slate-800"
           >
             <Upload className="w-4 h-4 mr-2" />
-            Importar Checklist de XLS
+            Importar Checklist de CSV
           </Button>
           <Button onClick={() => openNew('')}>
             <Plus className="w-4 h-4 mr-2" /> Nova Categoria
@@ -825,14 +826,14 @@ export default function ChecklistManagement() {
       <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
         <DialogContent className="bg-slate-900 text-slate-200 border-slate-800 sm:max-w-[800px] max-h-[90vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Importar Checklist de XLS/CSV</DialogTitle>
+            <DialogTitle>Importar Checklist de CSV</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-4 pt-4 pr-2">
             {!importPreview.length && !isParsing && (
               <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
                 <Input
                   type="file"
-                  accept=".csv, .xls, .xlsx"
+                  accept=".csv"
                   onChange={handleFileChange}
                   className="hidden"
                   id="file-upload"
@@ -843,9 +844,9 @@ export default function ChecklistManagement() {
                 >
                   <Upload className="w-8 h-8 text-slate-400" />
                   <span className="text-slate-300 font-medium">
-                    Clique para selecionar um arquivo
+                    Clique para selecionar um arquivo CSV
                   </span>
-                  <span className="text-slate-500 text-sm">Formato CSV ou XLS suportado</span>
+                  <span className="text-slate-500 text-sm">Formato CSV suportado</span>
                 </Label>
               </div>
             )}

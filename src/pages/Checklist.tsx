@@ -83,7 +83,7 @@ export default function Checklist() {
           </div>
         </div>
 
-        <div className="mb-8 sticky top-20 z-10 bg-background/95 backdrop-blur p-4 rounded-xl shadow-sm border">
+        <div className="mb-8 sticky top-20 z-10 bg-background/95 backdrop-blur p-6 rounded-xl shadow-sm border">
           <div className="flex justify-between text-sm font-medium mb-3 text-slate-600">
             <span>Progresso Geral</span>
             <span>{Math.round(progress)}%</span>
@@ -91,7 +91,7 @@ export default function Checklist() {
           <Progress value={progress} className="h-2.5" />
 
           {/* Tabs UI */}
-          <div className="flex space-x-2 overflow-x-auto mt-6 pb-2 scrollbar-hide">
+          <div className="flex flex-wrap gap-2 mt-6">
             {categories.map((cat, idx) => {
               const catQuestions = questions.filter((q) => q.categoria === cat)
               const isCatComplete = catQuestions.every((q) => answers[q.id])
@@ -102,7 +102,7 @@ export default function Checklist() {
                   key={cat}
                   onClick={() => setCurrentCategoryIndex(idx)}
                   className={cn(
-                    'whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors border',
+                    'px-4 py-2 rounded-full text-sm font-medium transition-colors border',
                     isActive
                       ? 'bg-primary text-primary-foreground border-primary'
                       : isCatComplete
@@ -200,7 +200,7 @@ export default function Checklist() {
               ))}
             </div>
           </CardContent>
-          <CardFooter className="flex items-center justify-between p-6 bg-muted/30 rounded-b-xl border-t">
+          <CardFooter className="flex items-center justify-between p-6 bg-background/95 backdrop-blur rounded-b-xl border-t sticky bottom-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
             <Button
               variant="outline"
               onClick={handlePrev}

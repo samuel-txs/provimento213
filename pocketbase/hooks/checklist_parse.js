@@ -8,7 +8,7 @@ routerAdd(
     }
 
     try {
-      const text = body.csvText
+      const text = body.csvText.replace(/^\uFEFF/, '')
       const rows = []
       let currentRow = []
       let currentCell = ''
