@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useConfiguracoes, hexToHsl } from '@/hooks/use-configuracoes'
 import pb from '@/lib/pocketbase/client'
 import { toast } from 'sonner'
-import { Loader2, Save, MonitorPlay, Copy } from 'lucide-react'
+import { Loader2, Save, MonitorPlay, Copy, AlertTriangle, ArrowRight } from 'lucide-react'
 
 export default function SettingsManagement() {
   const { configs, loading } = useConfiguracoes()
@@ -35,6 +35,12 @@ export default function SettingsManagement() {
         email_diagnostico_corpo: configs['email_diagnostico_corpo'] || '',
         email_diagnostico_destinatarios: configs['email_diagnostico_destinatarios'] || '',
         email_diagnostico_anexar_pdf: configs['email_diagnostico_anexar_pdf'] || 'false',
+        banner_ativo: configs['banner_ativo'] !== 'false' ? 'true' : 'false',
+        banner_texto:
+          configs['banner_texto'] ||
+          'Prazo de adequação ao Provimento 213 do CNJ em vigor — serventias não adequadas estão sujeitas a sanções administrativas',
+        banner_botao_texto: configs['banner_botao_texto'] || 'Verificar Status da Minha Serventia',
+        banner_cor: configs['banner_cor'] || '#b91c1c',
       })
     }
   }, [configs, loading])
@@ -110,6 +116,9 @@ export default function SettingsManagement() {
         <TabsList className="bg-slate-900 border border-slate-800">
           <TabsTrigger value="geral" className="data-[state=active]:bg-slate-800 text-slate-300">
             Geral e Tema
+          </TabsTrigger>
+          <TabsTrigger value="banner" className="data-[state=active]:bg-slate-800 text-slate-300">
+            Banner de Alerta
           </TabsTrigger>
           <TabsTrigger value="emails" className="data-[state=active]:bg-slate-800 text-slate-300">
             Automação de E-mails
@@ -299,6 +308,116 @@ export default function SettingsManagement() {
                         {formData.termos_consentimento || 'Termos de consentimento...'}
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="banner">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-8 shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Banner Global de Alerta</h3>
+                <p className="text-sm text-slate-400 mt-1">
+                  Configure o banner fixo exibido no topo de todas as páginas.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800">
+                <Switch
+                  checked={formData.banner_ativo === 'true'}
+                  onCheckedChange={(c) => handleChange('banner_ativo', c ? 'true' : 'false')}
+                />
+                <Label className="text-white font-medium cursor-pointer">
+                  {formData.banner_ativo === 'true' ? 'Ativado' : 'Desativado'}
+                </Label>
+              </div>
+            </div>
+
+            <div
+              className={
+                formData.banner_ativo !== 'true'
+                  ? 'opacity-50 pointer-events-none transition-opacity grid lg:grid-cols-2 gap-8'
+                  : 'transition-opacity grid lg:grid-cols-2 gap-8'
+              }
+            >
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Mensagem do Banner</Label>
+                  <Textarea
+                    value={formData.banner_texto || ''}
+                    onChange={(e) => handleChange('banner_texto', e.target.value)}
+                    className="bg-slate-950 border-slate-800 text-white min-h-[80px]"
+                    placeholder="Prazo de adequação ao Provimento 213..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Texto do Botão</Label>
+                  <Input
+                    value={formData.banner_botao_texto || ''}
+                    onChange={(e) => handleChange('banner_botao_texto', e.target.value)}
+                    className="bg-slate-950 border-slate-800 text-white"
+                    placeholder="Verificar Status da Minha Serventia"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Cor de Fundo (Alerta)</Label>
+                  <div className="flex gap-3">
+                    <Input
+                      type="color"
+                      value={formData.banner_cor || '#b91c1c'}
+                      onChange={(e) => handleChange('banner_cor', e.target.value)}
+                      className="w-14 h-10 p-1 bg-slate-950 border-slate-800 cursor-pointer rounded-md"
+                    />
+                    <Input
+                      value={formData.banner_cor || '#b91c1c'}
+                      onChange={(e) => handleChange('banner_cor', e.target.value)}
+                      className="bg-slate-950 border-slate-800 font-mono uppercase text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Preview do Banner */}
+              <div className="space-y-4">
+                <Label className="text-slate-300">Preview</Label>
+                <div className="border border-slate-800 rounded-lg overflow-hidden bg-black shadow-xl relative flex flex-col h-full min-h-[250px]">
+                  <div className="h-8 border-b border-slate-800 bg-slate-950/50 px-4 flex items-center gap-1.5 shrink-0">
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-800"></div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-800"></div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-slate-800"></div>
+                  </div>
+
+                  {/* Mock Navbar */}
+                  <div className="h-12 border-b border-slate-800 bg-black flex items-center justify-between px-4 shrink-0">
+                    <div className="h-4 w-20 bg-slate-800 rounded"></div>
+                    <div className="flex gap-2">
+                      <div className="h-2 w-8 bg-slate-800 rounded"></div>
+                      <div className="h-2 w-8 bg-slate-800 rounded"></div>
+                    </div>
+                  </div>
+
+                  <div
+                    className="w-full text-white px-3 py-3 flex flex-col xl:flex-row items-center justify-center gap-2 text-[10px] sm:text-xs text-center font-medium shrink-0 transition-colors"
+                    style={{ backgroundColor: formData.banner_cor || '#b91c1c' }}
+                  >
+                    <div className="flex items-center gap-2 max-w-[80%] text-left xl:text-center">
+                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="leading-snug">
+                        {formData.banner_texto || 'Texto de exemplo do banner...'}
+                      </span>
+                    </div>
+                    <div className="bg-white/20 px-3 py-1.5 rounded-full flex items-center gap-1 shrink-0 font-semibold cursor-pointer">
+                      {formData.banner_botao_texto || 'Texto do Botão'}
+                      <ArrowRight className="w-3 h-3" />
+                    </div>
+                  </div>
+
+                  <div className="p-4 flex-1 bg-slate-950 flex flex-col gap-2">
+                    <div className="h-4 bg-slate-900 rounded w-1/3 mb-2"></div>
+                    <div className="h-20 bg-slate-900/50 rounded w-full"></div>
+                    <div className="h-20 bg-slate-900/50 rounded w-full"></div>
                   </div>
                 </div>
               </div>

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, AlertTriangle, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import logoImg from '@/assets/logo-fundopreto-ti-express-tagline-5e290.png'
+import { useConfiguracoes } from '@/hooks/use-configuracoes'
+import { useRealtime } from '@/hooks/use-realtime'
 
 export function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -21,10 +23,48 @@ export function Layout() {
     { name: 'Contato', path: '#contato' },
   ]
 
+  const { configs } = useConfiguracoes()
+  const [bannerConfig, setBannerConfig] = useState({
+    ativo: configs['banner_ativo'] !== 'false',
+    texto:
+      configs['banner_texto'] ||
+      'Prazo de adequação ao Provimento 213 do CNJ em vigor — serventias não adequadas estão sujeitas a sanções administrativas',
+    botao_texto: configs['banner_botao_texto'] || 'Verificar Status da Minha Serventia',
+    cor: configs['banner_cor'] || '#b91c1c',
+  })
+
+  useEffect(() => {
+    if (Object.keys(configs).length > 0) {
+      setBannerConfig({
+        ativo: configs['banner_ativo'] !== 'false',
+        texto:
+          configs['banner_texto'] ||
+          'Prazo de adequação ao Provimento 213 do CNJ em vigor — serventias não adequadas estão sujeitas a sanções administrativas',
+        botao_texto: configs['banner_botao_texto'] || 'Verificar Status da Minha Serventia',
+        cor: configs['banner_cor'] || '#b91c1c',
+      })
+    }
+  }, [configs])
+
+  useRealtime('configuracoes_plataforma', (e) => {
+    if (e.action === 'update' || e.action === 'create') {
+      const { chave, valor } = e.record
+      if (chave.startsWith('banner_')) {
+        setBannerConfig((prev) => ({
+          ...prev,
+          ativo: chave === 'banner_ativo' ? valor === 'true' : prev.ativo,
+          texto: chave === 'banner_texto' ? valor : prev.texto,
+          botao_texto: chave === 'banner_botao_texto' ? valor : prev.botao_texto,
+          cor: chave === 'banner_cor' ? valor : prev.cor,
+        }))
+      }
+    }
+  })
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-800 bg-black text-white shadow-subtle">
+      <header className="sticky top-0 z-50 w-full border-b border-slate-800 bg-black text-white shadow-subtle flex flex-col">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
             <img
@@ -94,6 +134,33 @@ export function Layout() {
             </Button>
           </div>
         </div>
+
+        {bannerConfig.ativo && (
+          <div
+            className="w-full text-white px-4 py-2.5 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-sm text-center font-medium shadow-md z-40 relative transition-colors duration-300"
+            style={{ backgroundColor: bannerConfig.cor }}
+          >
+            <div className="flex items-center gap-2 max-w-4xl text-left sm:text-center">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              <span className="leading-snug">{bannerConfig.texto}</span>
+            </div>
+            <Button
+              asChild
+              variant="secondary"
+              size="sm"
+              className="h-8 rounded-full whitespace-nowrap bg-white/20 hover:bg-white/30 text-white border-none px-4 flex-shrink-0 transition-colors"
+            >
+              <Link
+                to="/checklist"
+                className="flex items-center gap-1.5 font-semibold"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
+                {bannerConfig.botao_texto}
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </Button>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
