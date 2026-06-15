@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -47,32 +47,32 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 216 65% 8%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 216 50% 15%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 216 50% 15%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 15 90% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 160 84% 39%;
+    --secondary: 216 30% 25%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 216 30% 20%;
+    --muted-foreground: 215 20.2% 75%;
 
     --accent: 38 92% 50%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent-foreground: 216 65% 10%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 216 30% 25%;
+    --input: 216 30% 25%;
     --ring: 15 90% 55%;
 
     --chart-1: 224 64% 50%;
@@ -96,7 +96,7 @@
   h4,
   h5,
   h6 {
-    @apply font-display tracking-tight;
+    @apply font-display tracking-tight font-medium;
   }
 
   section[aria-label='Notifications alt+T'] {
