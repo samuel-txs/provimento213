@@ -220,7 +220,18 @@ export function Layout() {
           </div>
         </div>
         <div className="container mx-auto px-4 mt-12 pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} Provimento 213 TXS. Todos os direitos reservados.</p>
+          <p>
+            © {new Date().getFullYear()}{' '}
+            <a
+              href="https://tiexpress.tec.br"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-orange-500 hover:text-orange-400 transition-colors"
+            >
+              Tiexpress Soluções
+            </a>
+            . Todos os direitos reservados.
+          </p>
           <div className="mt-4 md:mt-0 flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded-full">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
