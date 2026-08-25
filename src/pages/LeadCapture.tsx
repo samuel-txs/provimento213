@@ -117,12 +117,17 @@ export default function LeadCapture() {
           <div className="inline-flex items-center justify-center p-4 bg-primary/20 rounded-full mb-6">
             <ShieldCheck className="h-10 w-10 text-primary" />
           </div>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 text-sm font-medium mb-3">
+            <span>
+              Score Calculado: <strong className="text-orange-400">{score}%</strong>
+            </span>
+          </div>
           <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">
-            Seu relatório de conformidade está pronto
+            Liberar Relatório Completo & Recomendações
           </h1>
           <p className="text-slate-300 mt-4 text-lg">
-            Para acessar seu resultado e receber orientação de um especialista em Provimento 213,
-            preencha seus dados:
+            Preencha seus dados para acessar o plano de ação detalhado do Provimento 213, baixar o
+            PDF e receber o contato de um especialista:
           </p>
         </div>
 
@@ -256,7 +261,7 @@ export default function LeadCapture() {
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : (
                       <>
-                        Ver Meu Resultado
+                        Acessar Relatório Completo
                         <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
