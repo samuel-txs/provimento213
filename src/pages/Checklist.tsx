@@ -165,36 +165,28 @@ export default function Checklist() {
         return {
           container:
             'bg-emerald-50/90 border-emerald-500 text-emerald-950 shadow-md ring-2 ring-emerald-500/30',
-          badge: 'bg-emerald-600 text-white',
           checkCircle: 'bg-emerald-600 text-white border-emerald-600',
-          label: 'Completo / Conforme',
         }
       }
       if (isParcial) {
         return {
           container:
             'bg-amber-50/90 border-amber-500 text-amber-950 shadow-md ring-2 ring-amber-500/30',
-          badge: 'bg-amber-500 text-white',
           checkCircle: 'bg-amber-500 text-white border-amber-500',
-          label: 'Parcial',
         }
       }
       if (isNao) {
         return {
           container:
             'bg-rose-50/90 border-rose-500 text-rose-950 shadow-md ring-2 ring-rose-500/30',
-          badge: 'bg-rose-600 text-white',
           checkCircle: 'bg-rose-600 text-white border-rose-600',
-          label: 'Não / Crítico',
         }
       }
       // nao_sei or other
       return {
         container:
           'bg-slate-100/90 border-slate-500 text-slate-900 shadow-md ring-2 ring-slate-400/30',
-        badge: 'bg-slate-600 text-white',
         checkCircle: 'bg-slate-600 text-white border-slate-600',
-        label: 'Não sei informar',
       }
     }
 
@@ -203,35 +195,27 @@ export default function Checklist() {
       return {
         container:
           'bg-white hover:bg-emerald-50/40 border-slate-200 hover:border-emerald-300 text-slate-800 hover:shadow-sm',
-        badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
         checkCircle: 'border-slate-300 bg-white text-transparent group-hover:border-emerald-400',
-        label: 'Completo',
       }
     }
     if (isParcial) {
       return {
         container:
           'bg-white hover:bg-amber-50/40 border-slate-200 hover:border-amber-300 text-slate-800 hover:shadow-sm',
-        badge: 'bg-amber-50 text-amber-700 border border-amber-200',
         checkCircle: 'border-slate-300 bg-white text-transparent group-hover:border-amber-400',
-        label: 'Parcial',
       }
     }
     if (isNao) {
       return {
         container:
           'bg-white hover:bg-rose-50/40 border-slate-200 hover:border-rose-300 text-slate-800 hover:shadow-sm',
-        badge: 'bg-rose-50 text-rose-700 border border-rose-200',
         checkCircle: 'border-slate-300 bg-white text-transparent group-hover:border-rose-400',
-        label: 'Não',
       }
     }
     return {
       container:
         'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-800 hover:shadow-sm',
-      badge: 'bg-slate-100 text-slate-600 border border-slate-200',
       checkCircle: 'border-slate-300 bg-white text-transparent group-hover:border-slate-400',
-      label: 'Não sei',
     }
   }
 
@@ -515,48 +499,24 @@ export default function Checklist() {
                               onClick={() => setAnswer(q.id, opt.valor as AnswerValue)}
                               aria-pressed={isSelected}
                               className={cn(
-                                'group w-full text-left p-4 md:p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer flex items-center justify-between gap-4',
+                                'group w-full text-left p-4 md:p-5 rounded-xl border-2 transition-all duration-200 cursor-pointer flex items-center gap-4',
                                 style.container,
                               )}
                             >
-                              <div className="flex items-center gap-4 flex-1 min-w-0">
-                                {/* Custom radio/check indicator */}
-                                <div
-                                  className={cn(
-                                    'h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200',
-                                    style.checkCircle,
-                                  )}
-                                >
-                                  {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
-                                </div>
-
-                                {/* Option text */}
-                                <div className="flex-1">
-                                  <span className="text-base md:text-lg font-medium leading-normal block">
-                                    {opt.texto_opcao}
-                                  </span>
-                                </div>
+                              {/* Custom radio/check indicator */}
+                              <div
+                                className={cn(
+                                  'h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200',
+                                  style.checkCircle,
+                                )}
+                              >
+                                {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
                               </div>
 
-                              {/* Value badge indicator */}
-                              <div className="shrink-0 flex items-center">
-                                <span
-                                  className={cn(
-                                    'text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider',
-                                    style.badge,
-                                  )}
-                                >
-                                  {opt.valor === 'completo' && 'Completo'}
-                                  {opt.valor === 'parcial' && 'Parcial'}
-                                  {(opt.valor === 'não' || opt.valor === 'nao') && 'Não'}
-                                  {(opt.valor === 'nao_sei' || opt.valor === 'naosei') && 'Não sei'}
-                                  {opt.valor !== 'completo' &&
-                                    opt.valor !== 'parcial' &&
-                                    opt.valor !== 'não' &&
-                                    opt.valor !== 'nao' &&
-                                    opt.valor !== 'nao_sei' &&
-                                    opt.valor !== 'naosei' &&
-                                    opt.valor}
+                              {/* Option text */}
+                              <div className="flex-1 min-w-0">
+                                <span className="text-base md:text-lg font-medium leading-normal block">
+                                  {opt.texto_opcao}
                                 </span>
                               </div>
                             </button>
