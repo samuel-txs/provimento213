@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { ShieldCheck, CheckCircle2, ArrowRight, Loader2, AlertTriangle, Clock } from 'lucide-react'
+import { ShieldCheck, CheckCircle2, ArrowRight, Loader2, AlertTriangle } from 'lucide-react'
 import { useChecklist } from '@/hooks/use-checklist'
 import { upsertLead } from '@/services/api'
 import { toast } from '@/hooks/use-toast'
@@ -121,19 +121,13 @@ export default function Index() {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-[#D4AF37]/40 to-transparent relative z-20" />
 
       {/* Alert Banner */}
-      <section className="bg-red-700/95 text-white py-5 relative z-20 shadow-lg border-y border-red-600/50">
-        <div className="container px-4 mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm md:text-base font-normal">
-          <div className="flex items-start md:items-center gap-3">
-            <AlertTriangle className="h-6 w-6 shrink-0 text-red-200" />
-            <p className="leading-snug">
-              Atenção: o Provimento 213/2026 revoga o Provimento 74. As etapas de conformidade são
-              sequenciais — a Etapa 2 só pode ser declarada após 100% da Etapa 1.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 font-medium bg-black/20 px-5 py-2.5 rounded-full shrink-0 whitespace-nowrap">
-            <Clock className="h-4 w-4 text-red-200" />
-            <span>Prazo de adequação em vigor — não perca a jornada de conformidade</span>
-          </div>
+      <section className="bg-red-700/95 text-white py-4 md:py-5 relative z-20 shadow-lg border-y border-red-600/50">
+        <div className="container px-4 mx-auto flex items-center gap-3 text-sm md:text-base font-normal">
+          <AlertTriangle className="h-5 w-5 md:h-6 md:w-6 shrink-0 text-red-200" />
+          <p className="leading-snug">
+            ⏱️ Cronograma CNJ 213/243: Serventias têm de 180 a 300 dias para entregar governança e
+            infraestrutura inicial à Corregedoria. Descubra a data limite da sua unidade
+          </p>
         </div>
       </section>
 
