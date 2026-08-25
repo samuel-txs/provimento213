@@ -15,39 +15,35 @@ routerAdd(
     log.set('destinatario', email)
 
     try {
-      const apiKey = $secrets.get('RESEND_API_KEY')
-      if (apiKey) {
-        const res = $http.send({
-          url: 'https://api.resend.com/emails',
-          method: 'POST',
+      const crmUrl = ($os.getenv('CRM_DESTINO_URL') || '').replace(/\/$/, '')
+      const crmToken = $os.getenv('CRM_DESTINO_TOKEN') || ''
+
+      let probeResult = ''
+      try {
+        const resColls = $http.send({
+          url: crmUrl + '/api/collections?page=1&perPage=100',
+          method: 'GET',
           headers: {
-            Authorization: 'Bearer ' + apiKey,
-            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + crmToken,
           },
-          body: JSON.stringify({
-            from: 'onboarding@resend.dev',
-            to: email,
-            subject: 'Teste de Conectividade - Tiexpress',
-            html: '<p>Este é um e-mail de teste para verificar a conectividade do sistema com sucesso.</p>',
-          }),
+          timeout: 10,
         })
-        if (res.statusCode >= 400) {
-          throw new Error('Erro na API de e-mail (Resend): ' + res.statusCode)
-        }
-      } else {
-        console.log('Simulating email send as no RESEND_API_KEY is found.')
+        probeResult = 'Status: ' + resColls.statusCode + ' | ' + JSON.stringify(resColls.json)
+      } catch (httpErr) {
+        probeResult = 'HttpErr: ' + String(httpErr)
       }
 
       log.set('status', 'sucesso')
+      log.set('erro_detalhe', probeResult.slice(0, 5000))
       $app.save(log)
 
-      return e.json(200, { message: 'E-mail de teste disparado com sucesso.' })
+      return e.json(200, { message: 'Teste executado.', probe: probeResult })
     } catch (err) {
       log.set('status', 'erro')
       log.set('erro_detalhe', err.message)
       $app.save(log)
 
-      return e.badRequestError('Falha ao enviar e-mail: ' + err.message)
+      return e.badRequestError('Falha: ' + err.message)
     }
   },
   $apis.requireAuth(),
