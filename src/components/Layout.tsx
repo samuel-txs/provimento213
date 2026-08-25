@@ -20,7 +20,7 @@ export function Layout() {
     { name: 'O Provimento', path: '/#provimento' },
     { name: 'Serviços', path: '/servicos' },
     { name: 'Faça seu Checklist', path: '/checklist' },
-    { name: 'Contato', path: '#contato' },
+    { name: 'Contato', path: '/#diagnostico' },
   ]
 
   const { configs } = useConfiguracoes()
