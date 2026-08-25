@@ -33,6 +33,7 @@ export default function ChecklistManagement() {
   const navigate = useNavigate()
 
   const [questions, setQuestions] = useState<any[]>([])
+  const [options, setOptions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -68,10 +69,14 @@ export default function ChecklistManagement() {
     }
   }, [user, authLoading, navigate])
 
-  const fetchQuestions = async () => {
+  const fetchData = async () => {
     try {
-      const records = await pb.collection('perguntas_checklist').getFullList({ sort: 'ordem' })
-      setQuestions(records)
+      const [questionsRecords, optionsRecords] = await Promise.all([
+        pb.collection('perguntas_checklist').getFullList({ sort: 'ordem' }),
+        pb.collection('opcoes_resposta').getFullList({ sort: 'ordem' }),
+      ])
+      setQuestions(questionsRecords)
+      setOptions(optionsRecords)
     } catch (e) {
       console.error(e)
     } finally {
@@ -81,7 +86,7 @@ export default function ChecklistManagement() {
 
   useEffect(() => {
     if (user?.role === 'admin') {
-      fetchQuestions()
+      fetchData()
     } else if (!authLoading) {
       setLoading(false)
     }
@@ -90,7 +95,15 @@ export default function ChecklistManagement() {
   useRealtime(
     'perguntas_checklist',
     () => {
-      fetchQuestions()
+      fetchData()
+    },
+    user?.role === 'admin',
+  )
+
+  useRealtime(
+    'opcoes_resposta',
+    () => {
+      fetchData()
     },
     user?.role === 'admin',
   )
@@ -395,7 +408,7 @@ export default function ChecklistManagement() {
       setIsImportModalOpen(false)
       setImportPreview([])
       setImportFile(null)
-      fetchQuestions()
+      fetchData()
     } catch (err) {
       console.error(err)
       toast.error('Erro ao importar perguntas.')
@@ -464,7 +477,7 @@ export default function ChecklistManagement() {
       toast.success('Ordem atualizada.')
     } catch (err) {
       toast.error('Erro ao atualizar a ordem.')
-      fetchQuestions()
+      fetchData()
     }
   }
 
@@ -509,7 +522,7 @@ export default function ChecklistManagement() {
       setSelectedIds(new Set())
     } catch (err) {
       toast.error('Erro ao mover perguntas.')
-      fetchQuestions()
+      fetchData()
     }
   }
 
@@ -615,64 +628,109 @@ export default function ChecklistManagement() {
                       <TableHead className="w-8 px-2"></TableHead>
                       <TableHead className="text-slate-400 w-24 px-6">Ordem</TableHead>
                       <TableHead className="text-slate-400">Pergunta</TableHead>
+                      <TableHead className="text-slate-400">Opções de Resposta</TableHead>
                       <TableHead className="text-slate-400 text-right px-6">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {qs.map((q) => (
-                      <TableRow
-                        key={q.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, q.id, categoria)}
-                        onDragOver={(e) => handleDragOver(e, q.id, categoria)}
-                        onDrop={(e) => handleDrop(e, q.id, categoria)}
-                        onDragEnd={() => {
-                          setDraggedItem(null)
-                          setDragOverItem(null)
-                        }}
-                        className={cn(
-                          'border-slate-800 hover:bg-slate-800/50 transition-colors cursor-grab active:cursor-grabbing',
-                          draggedItem?.id === q.id && 'opacity-40 bg-slate-800/80',
-                          dragOverItem?.id === q.id &&
-                            dragOverItem?.id !== draggedItem?.id &&
-                            'border-t-2 border-t-primary bg-slate-800/30',
-                          selectedIds.has(q.id) && 'bg-slate-800/40',
-                        )}
-                      >
-                        <TableCell className="w-12 px-6">
-                          <Checkbox
-                            checked={selectedIds.has(q.id)}
-                            onCheckedChange={() => toggleSelection(q.id)}
-                            aria-label={`Selecionar pergunta ${q.ordem}`}
-                          />
-                        </TableCell>
-                        <TableCell className="w-8 px-2 text-slate-500">
-                          <GripVertical className="w-4 h-4 cursor-grab active:cursor-grabbing" />
-                        </TableCell>
-                        <TableCell className="text-slate-300 font-medium px-6">{q.ordem}</TableCell>
-                        <TableCell className="text-slate-300 max-w-2xl py-4">
-                          {q.texto_pergunta}
-                        </TableCell>
-                        <TableCell className="text-right px-6">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEdit(q)}
-                            className="text-slate-400 hover:text-white"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(q.id)}
-                            className="text-slate-400 hover:text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {qs.map((q) => {
+                      const questionOptions = options
+                        .filter((o) => o.pergunta_id === q.id)
+                        .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
+
+                      const getOptionBadgeStyle = (valor: string) => {
+                        switch (valor) {
+                          case 'não':
+                            return 'bg-red-900/40 text-red-300 border-red-800/50'
+                          case 'parcial':
+                            return 'bg-yellow-900/40 text-yellow-300 border-yellow-800/50'
+                          case 'completo':
+                            return 'bg-green-900/40 text-green-300 border-green-800/50'
+                          case 'nao_sei':
+                            return 'bg-slate-700/40 text-slate-300 border-slate-600/50'
+                          default:
+                            return 'bg-slate-800/60 text-slate-300 border-slate-700'
+                        }
+                      }
+
+                      return (
+                        <TableRow
+                          key={q.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, q.id, categoria)}
+                          onDragOver={(e) => handleDragOver(e, q.id, categoria)}
+                          onDrop={(e) => handleDrop(e, q.id, categoria)}
+                          onDragEnd={() => {
+                            setDraggedItem(null)
+                            setDragOverItem(null)
+                          }}
+                          className={cn(
+                            'border-slate-800 hover:bg-slate-800/50 transition-colors cursor-grab active:cursor-grabbing',
+                            draggedItem?.id === q.id && 'opacity-40 bg-slate-800/80',
+                            dragOverItem?.id === q.id &&
+                              dragOverItem?.id !== draggedItem?.id &&
+                              'border-t-2 border-t-primary bg-slate-800/30',
+                            selectedIds.has(q.id) && 'bg-slate-800/40',
+                          )}
+                        >
+                          <TableCell className="w-12 px-6">
+                            <Checkbox
+                              checked={selectedIds.has(q.id)}
+                              onCheckedChange={() => toggleSelection(q.id)}
+                              aria-label={`Selecionar pergunta ${q.ordem}`}
+                            />
+                          </TableCell>
+                          <TableCell className="w-8 px-2 text-slate-500">
+                            <GripVertical className="w-4 h-4 cursor-grab active:cursor-grabbing" />
+                          </TableCell>
+                          <TableCell className="text-slate-300 font-medium px-6">
+                            {q.ordem}
+                          </TableCell>
+                          <TableCell className="text-slate-300 max-w-md py-4">
+                            {q.texto_pergunta}
+                          </TableCell>
+                          <TableCell className="py-4">
+                            {questionOptions.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {questionOptions.map((opt) => (
+                                  <span
+                                    key={opt.id}
+                                    className={cn(
+                                      'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border',
+                                      getOptionBadgeStyle(opt.valor),
+                                    )}
+                                  >
+                                    {opt.texto_opcao}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-500 italic">
+                                Nenhuma opção vinculada
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right px-6">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(q)}
+                              className="text-slate-400 hover:text-white"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(q.id)}
+                              className="text-slate-400 hover:text-red-400"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
