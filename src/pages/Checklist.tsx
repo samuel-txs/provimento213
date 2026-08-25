@@ -20,7 +20,7 @@ import { useConfiguracoes } from '@/hooks/use-configuracoes'
 
 export default function Checklist() {
   const navigate = useNavigate()
-  const { answers, setAnswer, questions, loadingQuestions } = useChecklist()
+  const { answers, setAnswer, questions, options, loadingQuestions } = useChecklist()
   const { configs } = useConfiguracoes()
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0)
 
@@ -137,65 +137,126 @@ export default function Checklist() {
                     {q.texto_pergunta}
                   </h3>
 
-                  <RadioGroup
-                    onValueChange={(val) => setAnswer(q.id, val as AnswerValue)}
-                    value={answers[q.id] || ''}
-                    className="grid sm:grid-cols-2 gap-3"
-                  >
-                    {[
-                      { value: 'completo', label: 'Completo' },
-                      { value: 'parcial', label: 'Parcial' },
-                      { value: 'nao', label: 'Não' },
-                      { value: 'naosei', label: 'Não Sei Informar' },
-                    ].map((opt) => (
-                      <div
-                        key={opt.value}
-                        className={cn(
-                          'flex items-center space-x-3 border-2 p-4 rounded-lg cursor-pointer transition-all',
-                          answers[q.id] !== opt.value &&
-                            'hover:bg-muted/50 border-transparent bg-muted/20',
-                          answers[q.id] === opt.value &&
-                            opt.value === 'completo' &&
-                            'border-secondary bg-secondary/5',
-                          answers[q.id] === opt.value &&
-                            opt.value === 'parcial' &&
-                            'border-accent bg-accent/5',
-                          answers[q.id] === opt.value &&
-                            opt.value === 'nao' &&
-                            'border-destructive bg-destructive/5',
-                          answers[q.id] === opt.value &&
-                            opt.value === 'naosei' &&
-                            'border-slate-500 bg-slate-500/5',
-                        )}
-                      >
-                        <RadioGroupItem
-                          value={opt.value}
-                          id={`${q.id}-${opt.value}`}
+                  {options[q.id] && options[q.id].length > 0 ? (
+                    <RadioGroup
+                      onValueChange={(val) => setAnswer(q.id, val as AnswerValue)}
+                      value={answers[q.id] || ''}
+                      className="grid sm:grid-cols-2 gap-3"
+                    >
+                      {options[q.id].map((opt) => {
+                        const isSelected = answers[q.id] === opt.valor
+                        const isCompleto = opt.valor === 'completo'
+                        const isParcial = opt.valor === 'parcial'
+                        const isNao = opt.valor === 'não' || opt.valor === 'nao'
+                        const isNaoSei = opt.valor === 'nao_sei' || opt.valor === 'naosei'
+
+                        return (
+                          <div
+                            key={opt.id || `${q.id}-${opt.valor}`}
+                            className={cn(
+                              'flex items-center space-x-3 border-2 p-4 rounded-lg cursor-pointer transition-all',
+                              !isSelected && 'hover:bg-muted/50 border-transparent bg-muted/20',
+                              isSelected && isCompleto && 'border-secondary bg-secondary/5',
+                              isSelected && isParcial && 'border-accent bg-accent/5',
+                              isSelected && isNao && 'border-destructive bg-destructive/5',
+                              isSelected && isNaoSei && 'border-slate-500 bg-slate-500/5',
+                              isSelected &&
+                                !isCompleto &&
+                                !isParcial &&
+                                !isNao &&
+                                !isNaoSei &&
+                                'border-primary bg-primary/5',
+                            )}
+                          >
+                            <RadioGroupItem
+                              value={opt.valor}
+                              id={`${q.id}-${opt.id || opt.valor}`}
+                              className={cn(
+                                'h-5 w-5 border-slate-300',
+                                isSelected && isCompleto && 'border-secondary text-secondary',
+                                isSelected && isParcial && 'border-accent text-accent',
+                                isSelected && isNao && 'border-destructive text-destructive',
+                                isSelected && isNaoSei && 'border-slate-500 text-slate-500',
+                                isSelected &&
+                                  !isCompleto &&
+                                  !isParcial &&
+                                  !isNao &&
+                                  !isNaoSei &&
+                                  'border-primary text-primary',
+                              )}
+                            />
+                            <Label
+                              htmlFor={`${q.id}-${opt.id || opt.valor}`}
+                              className="flex-1 cursor-pointer text-base font-medium"
+                            >
+                              {opt.texto_opcao}
+                            </Label>
+                          </div>
+                        )
+                      })}
+                    </RadioGroup>
+                  ) : (
+                    /* Fallback default options if options are not loaded yet */
+                    <RadioGroup
+                      onValueChange={(val) => setAnswer(q.id, val as AnswerValue)}
+                      value={answers[q.id] || ''}
+                      className="grid sm:grid-cols-2 gap-3"
+                    >
+                      {[
+                        { value: 'não', label: 'Não' },
+                        { value: 'parcial', label: 'Parcial' },
+                        { value: 'completo', label: 'Completo' },
+                        { value: 'nao_sei', label: 'Não Sei Informar' },
+                      ].map((opt) => (
+                        <div
+                          key={opt.value}
                           className={cn(
-                            'h-5 w-5 border-slate-300',
+                            'flex items-center space-x-3 border-2 p-4 rounded-lg cursor-pointer transition-all',
+                            answers[q.id] !== opt.value &&
+                              'hover:bg-muted/50 border-transparent bg-muted/20',
                             answers[q.id] === opt.value &&
                               opt.value === 'completo' &&
-                              'border-secondary text-secondary',
+                              'border-secondary bg-secondary/5',
                             answers[q.id] === opt.value &&
                               opt.value === 'parcial' &&
-                              'border-accent text-accent',
+                              'border-accent bg-accent/5',
                             answers[q.id] === opt.value &&
-                              opt.value === 'nao' &&
-                              'border-destructive text-destructive',
+                              opt.value === 'não' &&
+                              'border-destructive bg-destructive/5',
                             answers[q.id] === opt.value &&
-                              opt.value === 'naosei' &&
-                              'border-slate-500 text-slate-500',
+                              opt.value === 'nao_sei' &&
+                              'border-slate-500 bg-slate-500/5',
                           )}
-                        />
-                        <Label
-                          htmlFor={`${q.id}-${opt.value}`}
-                          className="flex-1 cursor-pointer text-base font-medium"
                         >
-                          {opt.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
+                          <RadioGroupItem
+                            value={opt.value}
+                            id={`${q.id}-${opt.value}`}
+                            className={cn(
+                              'h-5 w-5 border-slate-300',
+                              answers[q.id] === opt.value &&
+                                opt.value === 'completo' &&
+                                'border-secondary text-secondary',
+                              answers[q.id] === opt.value &&
+                                opt.value === 'parcial' &&
+                                'border-accent text-accent',
+                              answers[q.id] === opt.value &&
+                                opt.value === 'não' &&
+                                'border-destructive text-destructive',
+                              answers[q.id] === opt.value &&
+                                opt.value === 'nao_sei' &&
+                                'border-slate-500 text-slate-500',
+                            )}
+                          />
+                          <Label
+                            htmlFor={`${q.id}-${opt.value}`}
+                            className="flex-1 cursor-pointer text-base font-medium"
+                          >
+                            {opt.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  )}
                 </div>
               ))}
             </div>

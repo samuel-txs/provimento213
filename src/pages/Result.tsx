@@ -128,7 +128,12 @@ export default function Result() {
   const StatusIcon = status.icon
 
   const itemsToImprove = questions.filter(
-    (q) => answers[q.id] === 'nao' || answers[q.id] === 'naosei' || answers[q.id] === 'parcial',
+    (q) =>
+      answers[q.id] === 'não' ||
+      answers[q.id] === 'nao' ||
+      answers[q.id] === 'nao_sei' ||
+      answers[q.id] === 'naosei' ||
+      answers[q.id] === 'parcial',
   )
 
   const cats = Array.from(new Set(itemsToImprove.map((i) => i.categoria)))
@@ -381,7 +386,7 @@ export default function Result() {
                   Hardware / Infraestrutura
                 </h4>
                 <ul className="space-y-2 text-sm">
-                  {answers['q_hardware_eol'] === 'nao' ? (
+                  {answers['q_hardware_eol'] === 'não' || answers['q_hardware_eol'] === 'nao' ? (
                     <li className="flex justify-between items-center">
                       <span className="text-slate-600">Servidores Legados</span>{' '}
                       <Badge variant="destructive">Crítico</Badge>
@@ -393,7 +398,9 @@ export default function Result() {
                     </li>
                   )}
 
-                  {answers['q_backup'] === 'nao' || answers['q_backup'] === 'parcial' ? (
+                  {answers['q_backup'] === 'não' ||
+                  answers['q_backup'] === 'nao' ||
+                  answers['q_backup'] === 'parcial' ? (
                     <li className="flex justify-between items-center">
                       <span className="text-slate-600">Solução de Backup</span>{' '}
                       <Badge className="bg-amber-500 text-white">Revisar</Badge>
@@ -411,7 +418,7 @@ export default function Result() {
                   Software / Segurança
                 </h4>
                 <ul className="space-y-2 text-sm">
-                  {answers['q_software_eol'] === 'nao' ? (
+                  {answers['q_software_eol'] === 'não' || answers['q_software_eol'] === 'nao' ? (
                     <li className="flex justify-between items-center">
                       <span className="text-slate-600">Sistemas Operacionais</span>{' '}
                       <Badge variant="destructive">Substituir</Badge>
@@ -423,7 +430,7 @@ export default function Result() {
                     </li>
                   )}
 
-                  {answers['q_firewall'] === 'nao' ? (
+                  {answers['q_firewall'] === 'não' || answers['q_firewall'] === 'nao' ? (
                     <li className="flex justify-between items-center">
                       <span className="text-slate-600">Firewall e Proteção Perimetral</span>{' '}
                       <Badge className="bg-amber-500 text-white">Implementar</Badge>

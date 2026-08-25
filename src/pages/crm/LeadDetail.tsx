@@ -726,19 +726,25 @@ export default function LeadDetail() {
                                   if (!r1 && !r2) return null
 
                                   const getAnswerLabel = (v: string) =>
-                                    v === 'sim'
-                                      ? 'Sim'
-                                      : v === 'nao'
+                                    v === 'sim' || v === 'completo'
+                                      ? 'Completo / Sim'
+                                      : v === 'não' || v === 'nao'
                                         ? 'Não'
                                         : v === 'parcial'
                                           ? 'Parcial'
                                           : 'Não sei'
+                                  const isCompletoVal = (val: string) =>
+                                    val === 'sim' || val === 'completo'
+                                  const isNaoVal = (val: string) => val === 'não' || val === 'nao'
+
                                   const isBetter =
-                                    (r1 !== 'sim' && r2 === 'sim') ||
-                                    (r1 === 'nao' && r2 === 'parcial')
+                                    (!isCompletoVal(r1) && isCompletoVal(r2)) ||
+                                    (isNaoVal(r1) && (r2 === 'parcial' || isCompletoVal(r2))) ||
+                                    (r1 === 'parcial' && isCompletoVal(r2))
                                   const isWorse =
-                                    (r1 === 'sim' && r2 !== 'sim') ||
-                                    (r1 === 'parcial' && r2 === 'nao')
+                                    (isCompletoVal(r1) && !isCompletoVal(r2)) ||
+                                    (r1 === 'parcial' && isNaoVal(r2)) ||
+                                    (!isNaoVal(r1) && isNaoVal(r2))
 
                                   return (
                                     <tr key={q.id}>

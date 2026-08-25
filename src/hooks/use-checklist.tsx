@@ -11,7 +11,15 @@ export interface LeadData {
   cnpj: string
 }
 
-export type AnswerValue = 'completo' | 'parcial' | 'nao' | 'naosei'
+export type AnswerValue = 'completo' | 'parcial' | 'não' | 'nao' | 'nao_sei' | 'naosei'
+
+export interface Opcao {
+  id: string
+  pergunta_id: string
+  texto_opcao: string
+  valor: 'não' | 'parcial' | 'completo' | 'nao_sei' | string
+  ordem: number
+}
 
 export interface Question {
   id: string
@@ -29,6 +37,7 @@ interface ChecklistContextType {
   reset: () => void
   score: number
   questions: Question[]
+  options: Record<string, Opcao[]>
   loadingQuestions: boolean
 }
 
@@ -38,14 +47,31 @@ export function ChecklistProvider({ children }: { children: ReactNode }) {
   const [leadData, setLeadData] = useState<LeadData | null>(null)
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({})
   const [questions, setQuestions] = useState<Question[]>([])
+  const [options, setOptions] = useState<Record<string, Opcao[]>>({})
   const [loadingQuestions, setLoadingQuestions] = useState(true)
 
-  const fetchQuestions = async () => {
+  const fetchChecklistData = async () => {
     try {
-      const records = await pb
-        .collection('perguntas_checklist')
-        .getFullList<Question>({ sort: 'ordem' })
-      setQuestions(records)
+      const [questionsRecords, optionsRecords] = await Promise.all([
+        pb.collection('perguntas_checklist').getFullList<Question>({ sort: 'ordem' }),
+        pb.collection('opcoes_resposta').getFullList<Opcao>({ sort: 'ordem' }),
+      ])
+      setQuestions(questionsRecords)
+
+      const optionsMap: Record<string, Opcao[]> = {}
+      optionsRecords.forEach((opt) => {
+        if (!optionsMap[opt.pergunta_id]) {
+          optionsMap[opt.pergunta_id] = []
+        }
+        optionsMap[opt.pergunta_id].push(opt)
+      })
+
+      // Sort each question's options by ordem
+      Object.keys(optionsMap).forEach((pId) => {
+        optionsMap[pId].sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
+      })
+
+      setOptions(optionsMap)
     } catch (err) {
       console.error(err)
     } finally {
@@ -54,11 +80,15 @@ export function ChecklistProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    fetchQuestions()
+    fetchChecklistData()
   }, [])
 
   useRealtime('perguntas_checklist', () => {
-    fetchQuestions()
+    fetchChecklistData()
+  })
+
+  useRealtime('opcoes_resposta', () => {
+    fetchChecklistData()
   })
 
   const setAnswer = (questionId: string, answer: AnswerValue) => {
@@ -78,8 +108,8 @@ export function ChecklistProvider({ children }: { children: ReactNode }) {
     Object.values(answers).forEach((val) => {
       if (val === 'completo') points += 25
       else if (val === 'parcial') points += 15
-      else if (val === 'naosei') points += 5
-      else if (val === 'nao') points += 0
+      else if (val === 'nao_sei' || val === 'naosei') points += 5
+      else if (val === 'não' || val === 'nao') points += 0
     })
 
     const maxPoints = total * 25
@@ -96,6 +126,7 @@ export function ChecklistProvider({ children }: { children: ReactNode }) {
         reset,
         score: calculateScore(),
         questions,
+        options,
         loadingQuestions,
       }}
     >
