@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,6 +27,183 @@ import { useRealtime } from '@/hooks/use-realtime'
 import { useAuth } from '@/hooks/use-auth'
 import { cn } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
+
+interface OptionItem {
+  id: string
+  pergunta_id: string
+  texto_opcao: string
+  valor: string
+  ordem?: number
+  [key: string]: any
+}
+
+function getOptionBadgeStyle(valor: string) {
+  switch (valor) {
+    case 'não':
+      return {
+        badge:
+          'bg-red-900/40 text-red-300 border-red-800/50 hover:bg-red-900/60 hover:border-red-700',
+        input:
+          'bg-red-950/80 text-red-200 border-red-700/80 focus:border-red-500 focus:ring-1 focus:ring-red-500',
+      }
+    case 'parcial':
+      return {
+        badge:
+          'bg-yellow-900/40 text-yellow-300 border-yellow-800/50 hover:bg-yellow-900/60 hover:border-yellow-700',
+        input:
+          'bg-yellow-950/80 text-yellow-200 border-yellow-700/80 focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500',
+      }
+    case 'completo':
+      return {
+        badge:
+          'bg-green-900/40 text-green-300 border-green-800/50 hover:bg-green-900/60 hover:border-green-700',
+        input:
+          'bg-green-950/80 text-green-200 border-green-700/80 focus:border-green-500 focus:ring-1 focus:ring-green-500',
+      }
+    case 'nao_sei':
+      return {
+        badge:
+          'bg-slate-700/40 text-slate-300 border-slate-600/50 hover:bg-slate-700/60 hover:border-slate-500',
+        input:
+          'bg-slate-900 text-slate-200 border-slate-600 focus:border-slate-400 focus:ring-1 focus:ring-slate-400',
+      }
+    default:
+      return {
+        badge:
+          'bg-slate-800/60 text-slate-300 border-slate-700 hover:bg-slate-800 hover:border-slate-600',
+        input:
+          'bg-slate-900 text-slate-200 border-slate-700 focus:border-slate-500 focus:ring-1 focus:ring-slate-500',
+      }
+  }
+}
+
+interface InlineEditableOptionBadgeProps {
+  option: OptionItem
+  onUpdateSuccess: (updatedOption: OptionItem) => void
+}
+
+function InlineEditableOptionBadge({ option, onUpdateSuccess }: InlineEditableOptionBadgeProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [value, setValue] = useState(option.texto_opcao)
+  const [isSaving, setIsSaving] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const isSubmittingRef = useRef(false)
+
+  // Sync with prop when not editing
+  useEffect(() => {
+    if (!isEditing) {
+      setValue(option.texto_opcao)
+    }
+  }, [option.texto_opcao, isEditing])
+
+  useEffect(() => {
+    if (isEditing) {
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [isEditing])
+
+  const styles = getOptionBadgeStyle(option.valor)
+
+  const handleStartEdit = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setValue(option.texto_opcao)
+    setIsEditing(true)
+  }
+
+  const handleSave = async () => {
+    if (isSubmittingRef.current) return
+    const trimmed = value.trim()
+
+    // If text didn't change or is empty, revert / cancel
+    if (!trimmed || trimmed === option.texto_opcao) {
+      setValue(option.texto_opcao)
+      setIsEditing(false)
+      return
+    }
+
+    isSubmittingRef.current = true
+    setIsSaving(true)
+
+    try {
+      const updated = await pb.collection('opcoes_resposta').update(option.id, {
+        texto_opcao: trimmed,
+      })
+      toast.success('Opção atualizada com sucesso.')
+      onUpdateSuccess({ ...option, texto_opcao: trimmed, ...updated })
+      setIsEditing(false)
+    } catch (error) {
+      console.error('Erro ao atualizar opção:', error)
+      toast.error('Erro ao salvar opção. Revertendo alterações.')
+      setValue(option.texto_opcao)
+      setIsEditing(false)
+    } finally {
+      setIsSaving(false)
+      isSubmittingRef.current = false
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      e.stopPropagation()
+      handleSave()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      setValue(option.texto_opcao)
+      setIsEditing(false)
+    }
+  }
+
+  if (isEditing) {
+    return (
+      <div
+        className="inline-flex items-center relative my-0.5"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        draggable={false}
+      >
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          disabled={isSaving}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={handleKeyDown}
+          className={cn(
+            'text-xs font-medium px-2 py-0.5 rounded border outline-none transition-all shadow-sm',
+            'min-w-[90px] max-w-[260px]',
+            styles.input,
+            isSaving && 'opacity-70 pr-6',
+          )}
+        />
+        {isSaving && (
+          <span className="absolute right-1.5 flex items-center pointer-events-none">
+            <Loader2 className="w-3 h-3 animate-spin text-slate-300" />
+          </span>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleStartEdit}
+      onMouseDown={(e) => e.stopPropagation()}
+      title="Clique para editar o texto desta opção"
+      className={cn(
+        'group inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border text-left cursor-pointer transition-all select-none',
+        styles.badge,
+      )}
+    >
+      <span>{option.texto_opcao}</span>
+      <Pencil className="w-2.5 h-2.5 opacity-0 group-hover:opacity-70 transition-opacity shrink-0" />
+    </button>
+  )
+}
 
 export default function ChecklistManagement() {
   const { user, loading: authLoading } = useAuth()
@@ -638,21 +815,6 @@ export default function ChecklistManagement() {
                         .filter((o) => o.pergunta_id === q.id)
                         .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
 
-                      const getOptionBadgeStyle = (valor: string) => {
-                        switch (valor) {
-                          case 'não':
-                            return 'bg-red-900/40 text-red-300 border-red-800/50'
-                          case 'parcial':
-                            return 'bg-yellow-900/40 text-yellow-300 border-yellow-800/50'
-                          case 'completo':
-                            return 'bg-green-900/40 text-green-300 border-green-800/50'
-                          case 'nao_sei':
-                            return 'bg-slate-700/40 text-slate-300 border-slate-600/50'
-                          default:
-                            return 'bg-slate-800/60 text-slate-300 border-slate-700'
-                        }
-                      }
-
                       return (
                         <TableRow
                           key={q.id}
@@ -691,17 +853,17 @@ export default function ChecklistManagement() {
                           </TableCell>
                           <TableCell className="py-4">
                             {questionOptions.length > 0 ? (
-                              <div className="flex flex-wrap gap-1">
+                              <div className="flex flex-wrap gap-1.5 items-center">
                                 {questionOptions.map((opt) => (
-                                  <span
+                                  <InlineEditableOptionBadge
                                     key={opt.id}
-                                    className={cn(
-                                      'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border',
-                                      getOptionBadgeStyle(opt.valor),
-                                    )}
-                                  >
-                                    {opt.texto_opcao}
-                                  </span>
+                                    option={opt}
+                                    onUpdateSuccess={(updatedOpt) => {
+                                      setOptions((prev) =>
+                                        prev.map((o) => (o.id === updatedOpt.id ? updatedOpt : o)),
+                                      )
+                                    }}
+                                  />
                                 ))}
                               </div>
                             ) : (
