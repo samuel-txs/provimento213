@@ -27,7 +27,7 @@ export default function CrmLayout() {
   useEffect(() => {
     if (!isAuthenticated) return
 
-    let timeout: NodeJS.Timeout
+    let timeout: ReturnType<typeof setTimeout>
     const resetTimeout = () => {
       clearTimeout(timeout)
       timeout = setTimeout(

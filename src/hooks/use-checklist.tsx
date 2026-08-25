@@ -3,6 +3,7 @@ import pb from '@/lib/pocketbase/client'
 import { useRealtime } from '@/hooks/use-realtime'
 
 export interface LeadData {
+  id?: string
   nome: string
   email: string
   telefone: string
@@ -17,6 +18,7 @@ export interface Question {
   categoria: string
   texto_pergunta: string
   ordem: number
+  recomendacao?: string
 }
 
 interface ChecklistContextType {

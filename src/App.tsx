@@ -29,7 +29,7 @@ import SettingsManagement from './pages/crm/gestao/SettingsManagement'
 import { ConfigProvider } from './hooks/use-configuracoes'
 
 const App = () => (
-  <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
+  <BrowserRouter>
     <AuthProvider>
       <TooltipProvider>
         <ChecklistProvider>
