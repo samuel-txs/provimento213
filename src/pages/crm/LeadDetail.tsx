@@ -330,6 +330,19 @@ export default function LeadDetail() {
                 {lead.cnpj}
               </div>
               <div>
+                <span className="text-slate-500 block mb-1">Classe de Faturamento</span>
+                {lead.classe ? (
+                  <Badge
+                    variant="outline"
+                    className="text-xs font-semibold bg-primary/10 text-primary border-primary/20"
+                  >
+                    {lead.classe}
+                  </Badge>
+                ) : (
+                  <span className="text-slate-500 italic">Não classificado</span>
+                )}
+              </div>
+              <div>
                 <span className="text-slate-500 block mb-1">Data de Criação</span>
                 {format(new Date(lead.created), 'dd/MM/yyyy HH:mm')}
               </div>

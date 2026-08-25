@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-25T20:12:18.082Z",
+  "generatedAt": "2026-08-25T20:32:40.144Z",
   "collections": [
     {
       "name": "users",
@@ -149,6 +149,13 @@
           "required": false,
           "system": false,
           "collectionRef": "users"
+        },
+        {
+          "name": "classe",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["Classe-1-Essencial", "Classe-2-Avancado", "Classe-3-Enterprise"]
         }
       ],
       "indexes": []

@@ -146,6 +146,7 @@ export default function MeusLeads() {
                 <TableHead className="text-slate-400">Data</TableHead>
                 <TableHead className="text-slate-400">Nome / Cartório</TableHead>
                 <TableHead className="text-slate-400">Score</TableHead>
+                <TableHead className="text-slate-400">Classe</TableHead>
                 <TableHead className="text-slate-400">Status</TableHead>
                 <TableHead className="text-slate-400 text-right">Ação</TableHead>
               </TableRow>
@@ -153,7 +154,8 @@ export default function MeusLeads() {
             <TableBody>
               {filteredLeads.length === 0 && (
                 <TableRow className="border-slate-800 hover:bg-transparent">
-                  <TableCell colSpan={5} className="text-center text-slate-500 py-8">
+                  <TableCell colSpan={6} className="text-center text-slate-500 py-8">
+                    {' '}
                     Nenhum lead encontrado com estes filtros.
                   </TableCell>
                 </TableRow>
@@ -181,8 +183,21 @@ export default function MeusLeads() {
                       {lead.score}%
                     </span>
                   </TableCell>
+                  <TableCell>
+                    {lead.classe ? (
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-slate-800 text-slate-300 border-slate-700"
+                      >
+                        {lead.classe}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-slate-500">-</span>
+                    )}
+                  </TableCell>
                   <TableCell>{getStatusBadge(lead.status)}</TableCell>
                   <TableCell className="text-right">
+                    {' '}
                     <Button
                       variant="ghost"
                       size="sm"
