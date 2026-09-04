@@ -1,7 +1,8 @@
 onRecordAfterCreateSuccess((e) => {
   try {
     const crmUrl =
-      $os.getenv('CRM_DESTINO_URL') || 'https://crm-txs.goskip.app/backend/v1/leads/create'
+      $os.getenv('CRM_DESTINO_URL') ||
+      'https://site-institucional-tiexpress-copy-e3bff.shrd00.internal.goskip.dev/backend/v1/leads/create'
 
     const apiKey =
       $os.getenv('CRM_API_KEY') ||
