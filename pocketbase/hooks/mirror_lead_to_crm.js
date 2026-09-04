@@ -5,9 +5,7 @@ onRecordAfterCreateSuccess((e) => {
       'https://site-institucional-tiexpress-copy-e3bff.shrd00.internal.goskip.dev/backend/v1/leads/create'
 
     const apiKey =
-      $os.getenv('CRM_API_KEY') ||
-      $os.getenv('CRM_DESTINO_TOKEN') ||
-      'T0i29z7DghW5yhxYni6ESoWAXGRWFcgwXx86wILsboSi6lJeFsdjwfbqq4tpEqqjJSTn844HOe6cl68LkRVIn3rjRZgDlBpMCUeA5jiJU7R5dZpql9cwZtBelV0K'
+      $os.getenv('CRM_API_KEY') || 'txs_lead_live_8f3d9b4c6e1a72054b3e89a1c62f4e0b7a95d13e'
 
     const email = e.record.getString('email')
     if (!email) {
