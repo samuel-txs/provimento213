@@ -91,7 +91,10 @@ export default function LeadCapture() {
         score_total: Number(score) || 0,
       })
 
-      setLeadData(values)
+      setLeadData({
+        ...values,
+        id: lead.id,
+      })
       toast({
         title: 'Sucesso!',
         description: 'Seus resultados foram gerados com sucesso.',

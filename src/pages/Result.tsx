@@ -59,6 +59,7 @@ export default function Result() {
     const saveLead = async () => {
       try {
         const record = await upsertLead({
+          ...(leadData.id ? { id: leadData.id } : {}),
           nome: leadData.nome,
           email: leadData.email,
           telefone: leadData.telefone,
@@ -160,6 +161,7 @@ export default function Result() {
     setIsSubmitting(true)
     try {
       await upsertLead({
+        ...(leadId ? { id: leadId } : leadData?.id ? { id: leadData.id } : {}),
         ...formData,
         score,
         notas: 'Lead autorizou contato ao baixar PDF.',

@@ -6,8 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ShieldCheck, CheckCircle2, ArrowRight, Loader2, AlertTriangle } from 'lucide-react'
 import { useChecklist } from '@/hooks/use-checklist'
 import { upsertLead } from '@/services/api'
-import { toast } from '@/hooks/use-toast'
-import { getErrorMessage } from '@/lib/pocketbase/errors'
 import logoBranca from '@/assets/icone-monobranca-ti-express-5de1a.png'
 
 export default function Index() {
@@ -31,24 +29,28 @@ export default function Index() {
     e.preventDefault()
     setIsSubmitting(true)
 
+    let createdLeadId: string | undefined
+
     try {
+      // Dispara o cadastro imediato do lead no CRM e na collection 'leads'
       const lead = await upsertLead({
         ...formData,
         status: 'novo',
       })
-
-      setLeadData({ ...formData, id: lead.id })
-      navigate('/checklist')
+      if (lead?.id) {
+        createdLeadId = lead.id
+      }
     } catch (err) {
-      console.error(err)
-      toast({
-        title: 'Erro ao iniciar',
-        description:
-          getErrorMessage(err) || 'Verifique se os dados estão corretos e tente novamente.',
-        variant: 'destructive',
-      })
+      // Falha não-bloqueante: log no console para não impedir o usuário de prosseguir com a avaliação
+      console.error('[Index] Falha ao cadastrar lead precocemente no CRM/PocketBase:', err)
     } finally {
       setIsSubmitting(false)
+      // Preserva os dados do lead no contexto (com ID se persistido) e redireciona ao checklist
+      setLeadData({
+        ...formData,
+        ...(createdLeadId ? { id: createdLeadId } : leadData?.id ? { id: leadData.id } : {}),
+      })
+      navigate('/checklist')
     }
   }
 
