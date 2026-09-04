@@ -1,10 +1,11 @@
 onRecordAfterCreateSuccess((e) => {
   try {
-    const crmUrl = (
+    const crmUrl =
       $os.getenv('CRM_DESTINO_URL') ||
-      'https://site-institucional-tiexpress-9af50.shrd00.internal.goskip.dev'
-    ).replace(/\/$/, '')
-    const crmToken =
+      'https://site-institucional-tiexpress-copy-e3bff.shrd00.internal.goskip.dev/backend/v1/leads/create'
+
+    const apiKey =
+      $os.getenv('CRM_API_KEY') ||
       $os.getenv('CRM_DESTINO_TOKEN') ||
       'T0i29z7DghW5yhxYni6n5ESoWAXGRWFcgwXx86wILsboSi6lJeFsdjwfbqq4tpYeEqqjJSTn844HOe6cl68LkRVIn3rjRZgDlBpMCUeA5jiJU7R5dZpql9cwZtBelV0K'
 
@@ -19,20 +20,12 @@ onRecordAfterCreateSuccess((e) => {
     const telefone = e.record.getString('telefone') || ''
     const cartorio = e.record.getString('cartorio') || ''
     const cnpj = e.record.getString('cnpj') || ''
-    const rawStatus = e.record.getString('status') || 'novo'
-    const score = e.record.getInt('score') || 0
     const rawNotas = e.record.getString('notas') || ''
+    const score = e.record.getInt('score') || 0
     const receitaPotencial = e.record.getFloat('receita_potencial') || 0
 
-    // Mapeamento de status: o destino aceita 'Novo' ou 'novo' (capitalize)
-    let statusDestino = 'Novo'
-    if (rawStatus === 'convertido') statusDestino = 'Convertido'
-    else if (rawStatus === 'contatado') statusDestino = 'Contatado'
-    else if (rawStatus === 'negociando') statusDestino = 'Negociando'
-    else if (rawStatus === 'novo') statusDestino = 'Novo'
-
-    // Compor notas com dados contextuais do Provimento 213
-    let notesContent = rawNotas
+    // Compor mensagem com dados contextuais do Provimento 213
+    let messageContent = rawNotas
     const extras = []
     if (cartorio) extras.push('Cartório: ' + cartorio)
     if (cnpj) extras.push('CNPJ: ' + cnpj)
@@ -41,81 +34,39 @@ onRecordAfterCreateSuccess((e) => {
 
     if (extras.length > 0) {
       const extraBlock = '[Origem: App Provimento 213]\n' + extras.join('\n')
-      notesContent = notesContent ? notesContent + '\n\n' + extraBlock : extraBlock
+      messageContent = messageContent ? messageContent + '\n\n' + extraBlock : extraBlock
     }
 
     const payload = {
       name: nome,
       email: email,
       phone: telefone,
-      company: cartorio,
-      status: statusDestino,
-      notes: notesContent,
+      message: messageContent,
       service: 'Provimento 213 CNJ',
+      company: cartorio,
+      usersCount: 0,
+      conversationId: '',
     }
 
-    // 1. Verificar se lead já existe no CRM de destino pelo email
-    const safeEmail = email.replace(/'/g, "\\'")
-    const checkRes = $http.send({
-      url:
-        crmUrl +
-        '/api/collections/leads/records?filter=' +
-        encodeURIComponent("(email='" + safeEmail + "')"),
-      method: 'GET',
-      headers: {
-        Authorization: 'Bearer ' + crmToken,
-      },
-      timeout: 10,
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-API-Key': apiKey,
+    }
+
+    const res = $http.send({
+      url: crmUrl,
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(payload),
+      timeout: 15,
     })
 
-    let existingId = null
-    if (
-      checkRes &&
-      checkRes.statusCode === 200 &&
-      checkRes.json &&
-      checkRes.json.items &&
-      checkRes.json.items.length > 0
-    ) {
-      existingId = checkRes.json.items[0].id
-    }
-
-    if (existingId) {
-      // 2. Atualizar registro existente (PATCH)
-      const updateRes = $http.send({
-        url: crmUrl + '/api/collections/leads/records/' + existingId,
-        method: 'PATCH',
-        headers: {
-          Authorization: 'Bearer ' + crmToken,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        timeout: 10,
-      })
-      console.log(
-        '[CRM Mirror Create Hook -> Update] Lead atualizado no CRM:',
-        email,
-        'status HTTP:',
-        updateRes.statusCode,
-      )
-    } else {
-      // 3. Criar novo registro (POST)
-      const createRes = $http.send({
-        url: crmUrl + '/api/collections/leads/records',
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer ' + crmToken,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        timeout: 10,
-      })
-      console.log(
-        '[CRM Mirror Create Hook -> Create] Lead criado no CRM:',
-        email,
-        'status HTTP:',
-        createRes.statusCode,
-      )
-    }
+    console.log(
+      '[CRM Mirror Create Hook] Lead enviado para CRM:',
+      email,
+      'status HTTP:',
+      res.statusCode,
+    )
   } catch (err) {
     console.log('[CRM Mirror Create Hook Error]', String(err))
   }
@@ -125,11 +76,12 @@ onRecordAfterCreateSuccess((e) => {
 
 onRecordAfterUpdateSuccess((e) => {
   try {
-    const crmUrl = (
+    const crmUrl =
       $os.getenv('CRM_DESTINO_URL') ||
-      'https://site-institucional-tiexpress-9af50.shrd00.internal.goskip.dev'
-    ).replace(/\/$/, '')
-    const crmToken =
+      'https://site-institucional-tiexpress-copy-e3bff.shrd00.internal.goskip.dev/backend/v1/leads/create'
+
+    const apiKey =
+      $os.getenv('CRM_API_KEY') ||
       $os.getenv('CRM_DESTINO_TOKEN') ||
       'T0i29z7DghW5yhxYni6n5ESoWAXGRWFcgwXx86wILsboSi6lJeFsdjwfbqq4tpYeEqqjJSTn844HOe6cl68LkRVIn3rjRZgDlBpMCUeA5jiJU7R5dZpql9cwZtBelV0K'
 
@@ -144,18 +96,11 @@ onRecordAfterUpdateSuccess((e) => {
     const telefone = e.record.getString('telefone') || ''
     const cartorio = e.record.getString('cartorio') || ''
     const cnpj = e.record.getString('cnpj') || ''
-    const rawStatus = e.record.getString('status') || 'novo'
-    const score = e.record.getInt('score') || 0
     const rawNotas = e.record.getString('notas') || ''
+    const score = e.record.getInt('score') || 0
     const receitaPotencial = e.record.getFloat('receita_potencial') || 0
 
-    let statusDestino = 'Novo'
-    if (rawStatus === 'convertido') statusDestino = 'Convertido'
-    else if (rawStatus === 'contatado') statusDestino = 'Contatado'
-    else if (rawStatus === 'negociando') statusDestino = 'Negociando'
-    else if (rawStatus === 'novo') statusDestino = 'Novo'
-
-    let notesContent = rawNotas
+    let messageContent = rawNotas
     const extras = []
     if (cartorio) extras.push('Cartório: ' + cartorio)
     if (cnpj) extras.push('CNPJ: ' + cnpj)
@@ -164,78 +109,39 @@ onRecordAfterUpdateSuccess((e) => {
 
     if (extras.length > 0) {
       const extraBlock = '[Origem: App Provimento 213]\n' + extras.join('\n')
-      notesContent = notesContent ? notesContent + '\n\n' + extraBlock : extraBlock
+      messageContent = messageContent ? messageContent + '\n\n' + extraBlock : extraBlock
     }
 
     const payload = {
       name: nome,
       email: email,
       phone: telefone,
-      company: cartorio,
-      status: statusDestino,
-      notes: notesContent,
+      message: messageContent,
       service: 'Provimento 213 CNJ',
+      company: cartorio,
+      usersCount: 0,
+      conversationId: '',
     }
 
-    const safeEmail = email.replace(/'/g, "\\'")
-    const checkRes = $http.send({
-      url:
-        crmUrl +
-        '/api/collections/leads/records?filter=' +
-        encodeURIComponent("(email='" + safeEmail + "')"),
-      method: 'GET',
-      headers: {
-        Authorization: 'Bearer ' + crmToken,
-      },
-      timeout: 10,
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-API-Key': apiKey,
+    }
+
+    const res = $http.send({
+      url: crmUrl,
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(payload),
+      timeout: 15,
     })
 
-    let existingId = null
-    if (
-      checkRes &&
-      checkRes.statusCode === 200 &&
-      checkRes.json &&
-      checkRes.json.items &&
-      checkRes.json.items.length > 0
-    ) {
-      existingId = checkRes.json.items[0].id
-    }
-
-    if (existingId) {
-      const updateRes = $http.send({
-        url: crmUrl + '/api/collections/leads/records/' + existingId,
-        method: 'PATCH',
-        headers: {
-          Authorization: 'Bearer ' + crmToken,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        timeout: 10,
-      })
-      console.log(
-        '[CRM Mirror Update Hook -> Update] Lead atualizado no CRM:',
-        email,
-        'status HTTP:',
-        updateRes.statusCode,
-      )
-    } else {
-      const createRes = $http.send({
-        url: crmUrl + '/api/collections/leads/records',
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer ' + crmToken,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        timeout: 10,
-      })
-      console.log(
-        '[CRM Mirror Update Hook -> Create] Lead criado no CRM:',
-        email,
-        'status HTTP:',
-        createRes.statusCode,
-      )
-    }
+    console.log(
+      '[CRM Mirror Update Hook] Lead enviado para CRM:',
+      email,
+      'status HTTP:',
+      res.statusCode,
+    )
   } catch (err) {
     console.log('[CRM Mirror Update Hook Error]', String(err))
   }
